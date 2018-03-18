@@ -5,70 +5,77 @@ use std::ops;
 use rand::{Rand, Rng};
 use rand::distributions::{IndependentSample, Range};
 
-use super::FeatureExtractor;
+use vec2d::Vec2D;
+use super::FeatureSet;
+use super::FixedLength;
+use super::Sample;
+use super::Shape2D;
 
 /// Features are equivalent to data columns.
 #[derive(Debug)]
-pub struct SelectFeature<T: ?Sized> {
-    col: usize,
-    _p: PhantomData<T>,
+pub struct ColumnFeature<Container> {
+    data: Container
 }
 
-impl<T> FeatureExtractor for SelectFeature<T>
+impl<C> From<C> for ColumnFeature<C> {
+    fn from(data: C) -> Self {
+        ColumnFeature {
+            data
+        }
+    }
+}
+
+impl<T> FeatureSet for ColumnFeature<Vec2D<T>>
+    where [T]: Sample<Theta=usize, Output=T>,
+          T: PartialOrd + Copy
+{
+    type Item = [T];
+
+    fn n_samples(&self) -> usize {
+        self.data.len()
+    }
+
+    fn get_sample(&self, n: usize) -> &Self::Item {
+        &self.data[n]
+    }
+
+    fn random_feature<R: Rng>(&self, rng: &mut R) -> <Self::Item as Sample>::Theta {
+        rng.gen_range(0, self.data.n_columns())
+    }
+
+    fn minmax(&self, theta: &<Self::Item as Sample>::Theta) -> Option<(<Self::Item as Sample>::Output, <Self::Item as Sample>::Output)> {
+        let mut samples = self.data.into_iter();
+        let (mut min, mut max) = match samples.next() {
+            None => return None,
+            Some(x) => {
+                let f = x.get_feature(theta);
+                (f, f)
+            }
+        };
+
+        for x in samples {
+            let f = x.get_feature(theta);
+            if f > max {
+                max = f;
+            }
+            if f < min {
+                min = f;
+            }
+        }
+
+        Some((min, max))
+    }
+}
+
+impl<T> Sample for [T]
     where T: Copy
 {
-    type Xi = [T];
-    type Fi = T;
-
-    fn new_random<R: Rng>(x: &Self::Xi, rng: &mut R) -> Self {
-        let col = rng.gen_range(0, x.len());
-        SelectFeature {
-            col,
-            _p: PhantomData,
-        }
-    }
-
-    fn extract(&self, x: &Self::Xi) -> Self::Fi {
-        x[self.col]
+    type Theta = usize;
+    type Output = T;
+    fn get_feature(&self, theta: &Self::Theta) -> Self::Output {
+        self[*theta]
     }
 }
-
-/// Defines a feature as the linear combination of two sample columns.
-#[derive(Debug)]
-struct Rot2DFeature<T> {
-    ia: usize,
-    ib: usize,
-    wa: f64,
-    wb: f64,
-    _p: PhantomData<T>,
-}
-
-impl<T> FeatureExtractor for Rot2DFeature<T>
-    where T: ops::Mul<Output=T> + ops::Add<Output=T> + Copy + Rand + PartialOrd,
-          T: Into<f64>
-{
-    type Xi = [T];
-    type Fi = f64;
-
-    fn new_random<R: Rng>(x: &Self::Xi, rng: &mut R) -> Self {
-        let mut range = Range::new(0, x.len());
-        let angle: f64 = rng.gen();
-        debug_assert!(angle >= 0.0);
-        debug_assert!(angle <= 1.0);
-        Rot2DFeature {
-            ia: range.ind_sample(rng),
-            ib: range.ind_sample(rng),
-            wa: angle.cos(),
-            wb: angle.sin(),
-            _p: PhantomData,
-        }
-    }
-
-    fn extract(&self, x: &Self::Xi) -> Self::Fi {
-        x[self.ia].into() * self.wa + x[self.ib].into() * self.wb
-    }
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -77,32 +84,21 @@ mod tests {
     use vec2d::Vec2D;
 
     #[test]
-    fn select() {
+    fn column_feature() {
         let n_columns = 4;
         let x: Vec2D<i32> = Vec2D::from_slice(&vec!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), n_columns);
 
-        let sf = SelectFeature {col: 1, _p: PhantomData};
-        assert_eq!(sf.extract(&x[1]), 6);
+        let fs = ColumnFeature::from(x);
 
-        let sf = SelectFeature::new_random(&x[0], &mut thread_rng());
-        assert!(sf.col >= 0);
-        assert!(sf.col < n_columns);
-    }
+        assert_eq!(fs.n_samples(), 3);
 
-    #[test]
-    fn rot2d() {
-        let n_columns = 4;
-        let x: Vec2D<i32> = Vec2D::from_slice(&vec!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), n_columns);
-        let y = vec!(1, 2, 1, 2, 11, 12, 11, 12);
+        assert_eq!(fs.minmax(&0), Some((1, 9)));
+        assert_eq!(fs.minmax(&1), Some((2, 10)));
+        assert_eq!(fs.minmax(&2), Some((3, 11)));
+        assert_eq!(fs.minmax(&3), Some((4, 12)));
 
-        let sf = Rot2DFeature {ia: 0, ib: 1, wa: 0.8, wb: 0.2, _p: PhantomData};
-        assert_eq!(sf.extract(&x[1]), 5.2);
-
-        let sf = Rot2DFeature::new_random(&x[0], &mut thread_rng());
-        assert!(sf.ia >= 0);
-        assert!(sf.ia < n_columns);
-        assert!(sf.ib >= 0);
-        assert!(sf.ib < n_columns);
-        assert!((sf.wa * sf.wa + sf.wb * sf.wb - 1.0).abs() < 1e-9);
+        for _ in 0..100 {
+            assert!(fs.random_feature(&mut thread_rng()) < 4);
+        }
     }
 }
