@@ -10,6 +10,7 @@ use super::FeatureSet;
 use super::FixedLength;
 use super::Sample;
 use super::Shape2D;
+use super::OutcomeVariable;
 
 /// Features are equivalent to data columns.
 #[derive(Debug)]
@@ -26,7 +27,7 @@ impl<C> From<C> for ColumnFeature<C> {
 }
 
 impl<T> FeatureSet for ColumnFeature<Vec2D<T>>
-    where [T]: Sample<Theta=usize, Output=T>,
+    where [T]: Sample<Theta=usize, Feature=T>,
           T: PartialOrd + Copy
 {
     type Item = [T];
@@ -43,7 +44,7 @@ impl<T> FeatureSet for ColumnFeature<Vec2D<T>>
         rng.gen_range(0, self.data.n_columns())
     }
 
-    fn minmax(&self, theta: &<Self::Item as Sample>::Theta) -> Option<(<Self::Item as Sample>::Output, <Self::Item as Sample>::Output)> {
+    fn minmax(&self, theta: &<Self::Item as Sample>::Theta) -> Option<(<Self::Item as Sample>::Feature, <Self::Item as Sample>::Feature)> {
         let mut samples = self.data.into_iter();
         let (mut min, mut max) = match samples.next() {
             None => return None,
@@ -65,15 +66,49 @@ impl<T> FeatureSet for ColumnFeature<Vec2D<T>>
 
         Some((min, max))
     }
+
+    fn for_each_mut<F: FnMut(&Self::Item)>(&self, mut f: F) {
+        for s in self.data.into_iter() {
+            f(s)
+        }
+    }
 }
 
 impl<T> Sample for [T]
     where T: Copy
 {
     type Theta = usize;
-    type Output = T;
-    fn get_feature(&self, theta: &Self::Theta) -> Self::Output {
+    type Feature = T;
+    fn get_feature(&self, theta: &Self::Theta) -> Self::Feature {
         self[*theta]
+    }
+}
+
+impl<T> OutcomeVariable for [T] {
+    type Item = T;
+
+    fn n_samples(&self) -> usize {
+        self.len()
+    }
+
+    fn for_each_mut<F: FnMut(&Self::Item)>(&self, mut f: F) {
+        for y in self.iter() {
+            f(y)
+        }
+    }
+}
+
+impl<T> OutcomeVariable for Vec<T> {
+    type Item = T;
+
+    fn n_samples(&self) -> usize {
+        self.len()
+    }
+
+    fn for_each_mut<F: FnMut(&Self::Item)>(&self, mut f: F) {
+        for y in self.iter() {
+            f(y)
+        }
     }
 }
 

@@ -29,8 +29,8 @@ pub trait Data {
 
 pub trait Sample {
     type Theta;
-    type Output;
-    fn get_feature(&self, theta: &Self::Theta) -> Self::Output;
+    type Feature;
+    fn get_feature(&self, theta: &Self::Theta) -> Self::Feature;
 }
 
 pub trait FeatureSet {
@@ -38,7 +38,17 @@ pub trait FeatureSet {
     fn n_samples(&self) -> usize;
     fn get_sample(&self, n: usize) -> &Self::Item;
     fn random_feature<R: Rng>(&self, rng: &mut R) -> <Self::Item as Sample>::Theta;
-    fn minmax(&self, theta: &<Self::Item as Sample>::Theta) -> Option<(<Self::Item as Sample>::Output, <Self::Item as Sample>::Output)>;
+    fn minmax(&self, theta: &<Self::Item as Sample>::Theta) -> Option<(<Self::Item as Sample>::Feature, <Self::Item as Sample>::Feature)>;
+
+    fn for_each_mut<F: FnMut(&Self::Item)>(&self, f: F);
+    #[inline] fn for_each<F: Fn(&Self::Item)>(&self, f: F) { self.for_each_mut(f) }
+}
+
+pub trait OutcomeVariable {
+    type Item: ?Sized;
+    fn n_samples(&self) -> usize;
+    fn for_each_mut<F: FnMut(&Self::Item)>(&self, f: F);
+    #[inline] fn for_each<F: Fn(&Self::Item)>(&self, f: F) { self.for_each_mut(f) }
 }
 
 /// Type has a length
@@ -72,38 +82,25 @@ pub trait SplitCriterion<'a> {
 }
 
 /// Prediction of the final Leaf value.
-pub trait LeafPredictor<'a, T: 'a>
-    where &'a Self::X: IntoIterator,
-          &'a Self::Y: IntoIterator<Item=&'a T>
+pub trait LeafPredictor<X, Y>
+    where X: FeatureSet,
+          Y: OutcomeVariable,
 {
-    type X: 'a + ? Sized;
-    type Y: 'a + ? Sized;
-
     /// predicted value
-    fn predict(&self, x: <&'a Self::X as IntoIterator>::Item) -> T;
+    fn predict(&self, x: &X::Item) -> Y::Item;
 
     /// fit predictor to data
-    fn fit(x: &'a Self::X, y: &'a Self::Y) -> Self;
+    fn fit(x: &X, y: &Y) -> Self;
 }
 
 /// The probabilistic leaf predictor models uncertainty in the prediction.
-pub trait ProbabilisticLeafPredictor<'a, T: 'a>: LeafPredictor<'a, T>
-    where &'a Self::X: IntoIterator,
-          &'a Self::Y: IntoIterator<Item=&'a T>
+pub trait ProbabilisticLeafPredictor<X, Y>: LeafPredictor<X, Y>
+    where X: FeatureSet,
+          Y: OutcomeVariable,
 {
     /// probability of given output `p(y|x)`
-    fn prob(&self, x: <&'a Self::X as IntoIterator>::Item, y: <&'a Self::Y as IntoIterator>::Item) -> f64;
+    fn prob(&self, x: &X::Item, y: &Y::Item) -> f64;
 }
-
-/*
-/// Extract feature from sample.
-pub trait FeatureExtractor {
-    type Xi: ? Sized;
-    type Fi: ? Sized;
-    fn new_random<R: Rng>(x: &Self::Xi, rng: &mut R) -> Self;
-    fn extract(&self, x: &Self::Xi) -> Self::Fi;
-}
-*/
 
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
 pub trait Splitter {

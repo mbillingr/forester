@@ -18,13 +18,13 @@ pub struct ThresholdSplitter<F>
     where F: FeatureSet
 {
     theta: <F::Item as Sample>::Theta,
-    threshold: <F::Item as Sample>::Output,
+    threshold: <F::Item as Sample>::Feature,
 }
 
 
 impl<F> Splitter for ThresholdSplitter<F>
     where F: FeatureSet,
-          <F::Item as Sample>::Output: SampleRange + PartialOrd
+          <F::Item as Sample>::Feature: SampleRange + PartialOrd
 {
     type F = F;
 
@@ -42,7 +42,7 @@ impl<F> Splitter for ThresholdSplitter<F>
 
 impl<F> DeterministicSplitter for ThresholdSplitter<F>
     where F: FeatureSet,
-          <F::Item as Sample>::Output: SampleRange + PartialOrd
+          <F::Item as Sample>::Feature: SampleRange + PartialOrd
 {
     fn split(&self, x: &F::Item) -> Side {
         let f = x.get_feature(&self.theta);
