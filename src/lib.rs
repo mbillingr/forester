@@ -1,3 +1,5 @@
+extern crate rand;
+
 use std::cmp;
 use std::f64;
 use std::iter;
@@ -5,7 +7,10 @@ use std::marker::PhantomData;
 use std::ops;
 use std::slice;
 
+use rand::Rng;
+
 mod criteria;
+mod features;
 mod predictors;
 mod vec2d;
 
@@ -61,9 +66,9 @@ trait ProbabilisticLeafPredictor<'a, T: 'a>: LeafPredictor<'a, T>
 /// Extract feature from sample.
 trait FeatureExtractor {
     type Xi: ? Sized;
-    type F: ? Sized;
-    fn new_random(x: &Self::Xi) -> Self;
-    fn extract(&self, x: &Self::Xi) -> Self::F;
+    type Fi: ? Sized;
+    fn new_random<R: Rng>(x: &Self::Xi, rng: &mut R) -> Self;
+    fn extract(&self, x: &Self::Xi) -> Self::Fi;
 }
 
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
@@ -90,8 +95,9 @@ trait ProbabilisticSplitter: Splitter {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn trig() {
     }
 }
