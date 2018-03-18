@@ -21,12 +21,23 @@ pub struct ThresholdSplitter<F>
     threshold: <F::Item as Sample>::Feature,
 }
 
+impl<F> ThresholdSplitter<F>
+    where F: FeatureSet
+{
+    pub fn new(theta: <F::Item as Sample>::Theta, threshold: <F::Item as Sample>::Feature) -> Self {
+        ThresholdSplitter {
+            theta,
+            threshold
+        }
+    }
+}
+
 
 impl<F> Splitter for ThresholdSplitter<F>
     where F: FeatureSet,
           <F::Item as Sample>::Feature: SampleRange + PartialOrd
 {
-    type F = F;
+    type X = F;
 
     fn new_random<R: Rng>(x: &F, rng: &mut R) -> Self
     {

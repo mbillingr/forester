@@ -16,10 +16,22 @@ pub struct ConstMean<X, Y> {
     _p: PhantomData<(X, Y)>,
 }
 
-impl<X, Y> LeafPredictor<X, Y> for ConstMean<X, Y>
+impl<X, Y> ConstMean<X, Y> {
+    pub fn new(value: f64) -> Self {
+        ConstMean {
+            value,
+            _p: PhantomData
+        }
+    }
+}
+
+impl<X, Y> LeafPredictor for ConstMean<X, Y>
     where X: FeatureSet,
           Y: OutcomeVariable<Item=f64>
 {
+    type X = X;
+    type Y = Y;
+
     fn predict(&self, x: &X::Item) -> f64 {
         self.value
     }
@@ -43,11 +55,13 @@ pub struct LinearRegression<X, Y, T> {
     _p: PhantomData<(X, Y)>,
 }
 
-impl<X, Y, T> LeafPredictor<X, Y> for LinearRegression<X, Y, T>
+impl<X, Y, T> LeafPredictor for LinearRegression<X, Y, T>
     where X: FeatureSet<Item=[T]>,
           Y: OutcomeVariable<Item=T>,
           T: ops::Mul<Output=T> + ops::AddAssign + Copy
 {
+    type X = X;
+    type Y = Y;
 
     /// predicted value
     fn predict(&self, x: &X::Item) -> T {
@@ -72,10 +86,13 @@ pub struct ConstGaussian<X, Y> {
 }
 
 
-impl<X, Y> LeafPredictor<X, Y> for ConstGaussian<X, Y>
+impl<X, Y> LeafPredictor for ConstGaussian<X, Y>
     where X: FeatureSet,
           Y: OutcomeVariable<Item=f64>
 {
+    type X = X;
+    type Y = Y;
+
     fn predict(&self, x: &X::Item) -> f64 {
         self.mean
     }
@@ -96,7 +113,7 @@ impl<X, Y> LeafPredictor<X, Y> for ConstGaussian<X, Y>
     }
 }
 
-impl<X, Y> ProbabilisticLeafPredictor<X, Y> for ConstGaussian<X, Y>
+impl<X, Y> ProbabilisticLeafPredictor for ConstGaussian<X, Y>
     where X: FeatureSet,
           Y: OutcomeVariable<Item=f64>
 {

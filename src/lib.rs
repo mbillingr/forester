@@ -82,45 +82,44 @@ pub trait SplitCriterion<'a> {
 }
 
 /// Prediction of the final Leaf value.
-pub trait LeafPredictor<X, Y>
-    where X: FeatureSet,
-          Y: OutcomeVariable,
+pub trait LeafPredictor
 {
+    type X: FeatureSet;
+    type Y: OutcomeVariable;
+
     /// predicted value
-    fn predict(&self, x: &X::Item) -> Y::Item;
+    fn predict(&self, x: &<Self::X as FeatureSet>::Item) -> <Self::Y as OutcomeVariable>::Item;
 
     /// fit predictor to data
-    fn fit(x: &X, y: &Y) -> Self;
+    fn fit(x: &Self::X, y: &Self::Y) -> Self;
 }
 
 /// The probabilistic leaf predictor models uncertainty in the prediction.
-pub trait ProbabilisticLeafPredictor<X, Y>: LeafPredictor<X, Y>
-    where X: FeatureSet,
-          Y: OutcomeVariable,
+pub trait ProbabilisticLeafPredictor: LeafPredictor
 {
     /// probability of given output `p(y|x)`
-    fn prob(&self, x: &X::Item, y: &Y::Item) -> f64;
+    fn prob(&self, x: &<Self::X as FeatureSet>::Item, y: &<Self::Y as OutcomeVariable>::Item) -> f64;
 }
 
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
 pub trait Splitter {
-    type F: FeatureSet;
-    fn new_random<R: Rng>(x: &Self::F, rng: &mut R) -> Self;
+    type X: FeatureSet;
+    fn new_random<R: Rng>(x: &Self::X, rng: &mut R) -> Self;
 }
 
 /// Assigns a sample to either side of the split.
 pub trait DeterministicSplitter: Splitter {
     //fn split(&self, f: &<Self::F as FeatureSet>::Sample::Output) -> Side;
-    fn split(&self, f: &<Self::F as FeatureSet>::Item) -> Side;
+    fn split(&self, f: &<Self::X as FeatureSet>::Item) -> Side;
 }
 
 /// Assigns a sample to both sides of the split with some probability each.
 pub trait ProbabilisticSplitter: Splitter {
     /// Probability that the sample belongs to the left side of the split
-    fn p_left(&self, f: &<Self::F as FeatureSet>::Item) -> f64;
+    fn p_left(&self, f: &<Self::X as FeatureSet>::Item) -> f64;
 
     /// Probability that the sample belongs to the right side of the split
-    fn p_right(&self, f: &<Self::F as FeatureSet>::Item) -> f64 { 1.0 - self.p_left(f) }
+    fn p_right(&self, f: &<Self::X as FeatureSet>::Item) -> f64 { 1.0 - self.p_left(f) }
 }
 
 
