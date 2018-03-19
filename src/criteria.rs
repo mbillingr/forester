@@ -32,11 +32,7 @@ impl<S> SplitCriterion for VarCriterion<S>
         let n = data.len() as f64;
 
         let mean = sum / n;
-
         ssum / n - mean * mean
-
-        //let mean: f64 = y.into_iter().map(|yi| (*yi).into()).sum::<f64>() / y.len() as f64;
-        //y.into_iter().map(|yi| (*yi).into() ).map(|yi| yi * yi).sum::<f64>() / y.len() as f64 - mean * mean
     }
 
     fn calc_postsplit(yl: &Self::D, yr: &Self::D) -> f64 {

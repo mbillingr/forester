@@ -9,11 +9,6 @@ use super::Sample;
 
 use get_item::GetItem;
 
-//use super::DataSet;
-//use super::FeatureSet;
-//use super::OutcomeVariable;
-
-
 
 trait Sortable<T> {
     fn sort_unstable_by<F>(&mut self, predicate: F)

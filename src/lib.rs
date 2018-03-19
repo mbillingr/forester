@@ -9,6 +9,7 @@ use std::slice;
 
 use rand::Rng;
 
+pub mod array_ops;
 pub mod criteria;
 pub mod datasets;
 pub mod features;
@@ -25,15 +26,22 @@ pub enum Side {
 }
 
 pub trait Float {
+    fn zero() -> Self;
+    fn one() -> Self;
     fn from_usize(v: usize) -> Self;
 }
 
 impl Float for f32 {
+    fn zero() -> Self {0.0}
+    fn one() -> Self {0.0}
     fn from_usize(v: usize) -> Self {
         v as f32
     }
 }
+
 impl Float for f64 {
+    fn zero() -> Self {0.0}
+    fn one() -> Self {0.0}
     fn from_usize(v: usize) -> Self {
         v as f64
     }
@@ -148,7 +156,7 @@ pub trait LeafPredictor
     type D: ?Sized + DataSet;
 
     /// predicted value
-    fn predict(&self, s: <Self::S as Sample>::X) -> <Self::S as Sample>::Y;
+    fn predict(&self, s: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y;
 
     /// fit predictor to data
     fn fit(data: &Self::D) -> Self;
@@ -158,7 +166,7 @@ pub trait LeafPredictor
 pub trait ProbabilisticLeafPredictor: LeafPredictor
 {
     /// probability of given output `p(y|x)`
-    fn prob(&self, x: &Self::S) -> f64;
+    fn prob(&self, s: &Self::S) -> f64;
 }
 
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
