@@ -55,8 +55,8 @@ impl<D> DeterministicSplitter for ThresholdSplitter<D>
     where D: ?Sized + DataSet,
           //<D::Item as Sample>::F: SampleRange + PartialOrd
 {
-    fn split(&self, s: &<Self::D as DataSet>::Item) -> Side {
-        let f = D::FX::get_feature(&s.get_x(), &self.theta);
+    fn split(&self, x: &<Self::D as DataSet>::X) -> Side {
+        let f = D::FX::get_feature(x, &self.theta);
         if f <= self.threshold {
             Side::Left
         } else {

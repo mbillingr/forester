@@ -37,18 +37,18 @@ impl<S: Splitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Tree<S, P
 impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Tree<S, P>
 {
     /// Pass a sample `x` down the tree and predict output of final leaf.
-    pub fn predict(&self, s: &P::S) -> <P::S as Sample>::Y {
+    pub fn predict(&self, x: &<P::S as Sample>::X) -> <P::S as Sample>::Y {
         let mut n = 0;
         loop {
             match self.nodes[n] {
                 Node::Split{ref split, left, right} => {
-                    match split.split(s) {
+                    match split.split(x) {
                         Side::Left => n = left,
                         Side::Right => n = right,
                     }
                 }
                 Node::Leaf(ref l) => {
-                    return l.predict(&s.get_x())
+                    return l.predict(x)
                 }
                 Node::Invalid => panic!("Invalid node found. Tree may not be fully constructed.")
             }
@@ -76,11 +76,11 @@ mod tests {
                 Node::Leaf(ConstMean::new(1.0))}
         };
 
-        assert_eq!(tree.predict(&TupleSample::new([-10], 0.0)), -1.0);
-        assert_eq!(tree.predict(&TupleSample::new([1], 0.0)), -1.0);
-        assert_eq!(tree.predict(&TupleSample::new([2], 0.0)), -1.0);
-        assert_eq!(tree.predict(&TupleSample::new([3], 0.0)), 1.0);
-        assert_eq!(tree.predict(&TupleSample::new([4], 0.0)), 1.0);
-        assert_eq!(tree.predict(&TupleSample::new([10], 0.0)), 1.0);
+        assert_eq!(tree.predict(&[-10]), -1.0);
+        assert_eq!(tree.predict(&[1]), -1.0);
+        assert_eq!(tree.predict(&[2]), -1.0);
+        assert_eq!(tree.predict(&[3]), 1.0);
+        assert_eq!(tree.predict(&[4]), 1.0);
+        assert_eq!(tree.predict(&[10]), 1.0);
     }
 }

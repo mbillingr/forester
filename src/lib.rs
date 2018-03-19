@@ -180,16 +180,16 @@ pub trait Splitter {
 /// Assigns a sample to either side of the split.
 pub trait DeterministicSplitter: Splitter {
     //fn split(&self, f: &<Self::F as FeatureSet>::Sample::Output) -> Side;
-    fn split(&self, s: &<Self::D as DataSet>::Item) -> Side;
+    fn split(&self, x: &<Self::D as DataSet>::X) -> Side;
 }
 
 /// Assigns a sample to both sides of the split with some probability each.
 pub trait ProbabilisticSplitter: Splitter {
     /// Probability that the sample belongs to the left side of the split
-    fn p_left(&self, s: &<Self::D as DataSet>::Item) -> f64;
+    fn p_left(&self, x: &<Self::D as DataSet>::X) -> f64;
 
     /// Probability that the sample belongs to the right side of the split
-    fn p_right(&self, s: &<Self::D as DataSet>::Item) -> f64 { 1.0 - self.p_left(s) }
+    fn p_right(&self, x: &<Self::D as DataSet>::X) -> f64 { 1.0 - self.p_left(x) }
 }
 
 
