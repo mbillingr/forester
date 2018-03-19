@@ -1,3 +1,4 @@
+use std::cmp;
 use std::f64;
 use std::marker::PhantomData;
 use std::ops;
@@ -16,7 +17,7 @@ pub struct ColumnSelect;
 
 impl<X> Feature<X> for ColumnSelect
 where X: GetItem,
-      X::Item: Clone,
+      X::Item: Clone + cmp::PartialOrd,
 {
     type Theta = usize;
     type F = X::Item;

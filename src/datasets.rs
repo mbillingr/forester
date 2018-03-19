@@ -38,12 +38,13 @@ impl<X, Y, FX> Sample for TupleSample<FX, X, Y>
 {
     type Theta = FX::Theta;
     type F = FX::F;
+    type FX = FX;
     type X = X;
     type Y = Y;
 
-    fn get_feature(&self, theta: &FX::Theta) -> Self::F {
+    /*fn get_feature(&self, theta: &FX::Theta) -> Self::F {
         FX::get_feature(&self.data.0, theta)
-    }
+    }*/
 
     fn get_x(&self) -> Self::X {
         self.data.0.clone()
@@ -64,7 +65,7 @@ mod tests {
     #[test]
     fn dataset_sort() {
         let s: TupleSample<Mix2, _, _> = TupleSample{data: ([1, 2], 3), _p: PhantomData};
-        assert_eq!(s.get_feature(&(0, 1, 0.5)), 1.5);
+        assert_eq!(Mix2::get_feature(&s.get_x(), &(0, 1, 0.5)), 1.5);
 
         let data: &mut [TupleSample<ColumnSelect, _, _>] =
             &mut [TupleSample{data: ([0, 3], 1), _p: PhantomData},
@@ -72,7 +73,7 @@ mod tests {
                  TupleSample{data: ([1, 1], 3), _p: PhantomData},
                  TupleSample{data: ([3, 2], 4), _p: PhantomData}] as &mut [_];
 
-        assert_eq!(data[0].get_feature(&1), 3);
+        assert_eq!(ColumnSelect::get_feature(&data[0].get_x(), &1), 3);
         assert_eq!(data.n_samples(), 4);
 
         data.sort_by_feature(&1);

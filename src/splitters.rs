@@ -8,20 +8,21 @@ use rand::distributions::range::SampleRange;
 
 use super::DataSet;
 use super::DeterministicSplitter;
+use super::Feature;
 use super::Sample;
 use super::Side;
 use super::Splitter;
 
 /// Use a simple threshold for deterministic split.
 pub struct ThresholdSplitter<D>
-    where D: DataSet
+    where D: ?Sized + DataSet
 {
     theta: <D::Item as Sample>::Theta,
     threshold: <D::Item as Sample>::F,
 }
 
 impl<D> ThresholdSplitter<D>
-    where D: DataSet
+    where D: ?Sized + DataSet
 {
     pub fn new(theta: <D::Item as Sample>::Theta, threshold: <D::Item as Sample>::F) -> Self {
         ThresholdSplitter {
@@ -32,7 +33,7 @@ impl<D> ThresholdSplitter<D>
 }
 
 impl<D> Splitter for ThresholdSplitter<D>
-    where D: DataSet,
+    where D: ?Sized + DataSet,
           //<F::Item as Sample>::Feature: SampleRange + PartialOrd
 {
     type D = D;
@@ -51,11 +52,11 @@ impl<D> Splitter for ThresholdSplitter<D>
 }
 
 impl<D> DeterministicSplitter for ThresholdSplitter<D>
-    where D: DataSet,
+    where D: ?Sized + DataSet,
           //<D::Item as Sample>::F: SampleRange + PartialOrd
 {
     fn split(&self, s: &<Self::D as DataSet>::Item) -> Side {
-        let f = s.get_feature(&self.theta);
+        let f = D::FX::get_feature(&s.get_x(), &self.theta);
         if f <= self.threshold {
             Side::Left
         } else {

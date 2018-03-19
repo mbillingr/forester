@@ -49,16 +49,16 @@ impl Float for f64 {
 
 pub trait Feature<X> {
     type Theta;
-    type F;
+    type F: cmp::PartialOrd;
     fn get_feature(x: &X, theta: &Self::Theta) -> Self::F;
 }
 
 pub trait Sample {
     type Theta;
     type F: cmp::PartialOrd;
+    type FX: Feature<Self::X, Theta=Self::Theta, F=Self::F>;
     type X;
     type Y;
-    fn get_feature(&self, theta: &Self::Theta) -> Self::F;
     fn get_x(&self) -> Self::X;
     fn get_y(&self) -> Self::Y;
 }
@@ -66,9 +66,10 @@ pub trait Sample {
 pub trait DataSet {
     type Theta;
     type F: cmp::PartialOrd;
+    type FX: Feature<Self::X, Theta=Self::Theta, F=Self::F>;
     type X;
     type Y;
-    type Item: Sample<Theta=Self::Theta, F=Self::F, Y=Self::Y>;
+    type Item: Sample<Theta=Self::Theta, F=Self::F, FX=Self::FX, X=Self::X, Y=Self::Y>;
 
     fn n_samples(&self) -> usize;
     fn sort_by_feature(&mut self, theta: &Self::Theta);
@@ -80,6 +81,7 @@ where S: Sample,
 {
     type Theta = S::Theta;
     type F = S::F;
+    type FX = S::FX;
     type X = S::X;
     type Y = S::Y;
     type Item = S;
@@ -88,10 +90,10 @@ where S: Sample,
         self.len()
     }
 
-    fn sort_by_feature(&mut self, theta: &S::Theta) {
+    fn sort_by_feature(&mut self, theta: &Self::Theta) {
         self.sort_unstable_by(|sa, sb| {
-            let fa = sa.get_feature(theta);
-            let fb = sb.get_feature(theta);
+            let fa = S::FX::get_feature(&sa.get_x(), theta);
+            let fb = S::FX::get_feature(&sb.get_x(), theta);
             // TODO: We probably don't want to panic on e.g. NaN values -- but how shall we treat them?
             match fa.partial_cmp(&fb) {
                 Some(o) => o,
@@ -171,7 +173,7 @@ pub trait ProbabilisticLeafPredictor: LeafPredictor
 
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
 pub trait Splitter {
-    type D: DataSet;
+    type D: ?Sized + DataSet;
     fn new_random<R: Rng>(x: &Self::D, rng: &mut R) -> Self;
 }
 
