@@ -134,11 +134,11 @@ impl<'a, T> FixedLength for [T] {
 }
 
 /// For comparing splits
-pub trait SplitCriterion<'a> {
-    type Y: ?Sized;
+pub trait SplitCriterion {
+    type D: ?Sized + DataSet;
     type C: ?Sized + cmp::PartialOrd + Copy;
-    fn calc_presplit(y: &'a Self::Y) -> Self::C;
-    fn calc_postsplit(yl: &'a Self::Y, yr: &'a Self::Y) -> Self::C;
+    fn calc_presplit(y: &Self::D) -> Self::C;
+    fn calc_postsplit(yl: &Self::D, yr: &Self::D) -> Self::C;
 }
 
 /// Prediction of the final Leaf value.
