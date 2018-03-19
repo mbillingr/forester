@@ -5,110 +5,41 @@ use std::ops;
 use rand::{Rand, Rng};
 use rand::distributions::{IndependentSample, Range};
 
-use vec2d::Vec2D;
-use super::FeatureSet;
+use super::Feature;
 use super::FixedLength;
 use super::Sample;
 use super::Shape2D;
-use super::OutcomeVariable;
 
-/// Features are equivalent to data columns.
-#[derive(Debug)]
-pub struct ColumnFeature<Container> {
-    data: Container
-}
+use get_item::GetItem;
 
-impl<C> From<C> for ColumnFeature<C> {
-    fn from(data: C) -> Self {
-        ColumnFeature {
-            data
-        }
-    }
-}
+pub struct ColumnSelect;
 
-impl<T> FeatureSet for ColumnFeature<Vec2D<T>>
-    where [T]: Sample<Theta=usize, Feature=T>,
-          T: PartialOrd + Copy
-{
-    type Item = [T];
-
-    fn n_samples(&self) -> usize {
-        self.data.len()
-    }
-
-    fn get_sample(&self, n: usize) -> &Self::Item {
-        &self.data[n]
-    }
-
-    fn random_feature<R: Rng>(&self, rng: &mut R) -> <Self::Item as Sample>::Theta {
-        rng.gen_range(0, self.data.n_columns())
-    }
-
-    fn minmax(&self, theta: &<Self::Item as Sample>::Theta) -> Option<(<Self::Item as Sample>::Feature, <Self::Item as Sample>::Feature)> {
-        let mut samples = self.data.into_iter();
-        let (mut min, mut max) = match samples.next() {
-            None => return None,
-            Some(x) => {
-                let f = x.get_feature(theta);
-                (f, f)
-            }
-        };
-
-        for x in samples {
-            let f = x.get_feature(theta);
-            if f > max {
-                max = f;
-            }
-            if f < min {
-                min = f;
-            }
-        }
-
-        Some((min, max))
-    }
-
-    fn for_each_mut<F: FnMut(&Self::Item)>(&self, mut f: F) {
-        for s in self.data.into_iter() {
-            f(s)
-        }
-    }
-}
-
-impl<T> Sample for [T]
-    where T: Copy
+impl<X> Feature<X> for ColumnSelect
+where X: GetItem,
+      X::Item: Clone,
 {
     type Theta = usize;
-    type Feature = T;
-    fn get_feature(&self, theta: &Self::Theta) -> Self::Feature {
-        self[*theta]
+    type F = X::Item;
+
+    fn get_feature(x: &X, theta: &usize) -> Self::F {
+        x.get_item(*theta).clone()
     }
 }
 
-impl<T> OutcomeVariable for [T] {
-    type Item = T;
+pub struct Mix2;
 
-    fn n_samples(&self) -> usize {
-        self.len()
-    }
+impl<X> Feature<X> for Mix2
+where X: GetItem,
+      X::Item: Copy + Into<f64>,
+{
+    type Theta = (usize, usize, f64);
+    type F = f64;
 
-    fn for_each_mut<F: FnMut(&Self::Item)>(&self, mut f: F) {
-        for y in self.iter() {
-            f(y)
-        }
-    }
-}
-
-impl<T> OutcomeVariable for Vec<T> {
-    type Item = T;
-
-    fn n_samples(&self) -> usize {
-        self.len()
-    }
-
-    fn for_each_mut<F: FnMut(&Self::Item)>(&self, mut f: F) {
-        for y in self.iter() {
-            f(y)
-        }
+    fn get_feature(x: &X, theta: &Self::Theta) -> f64 {
+        let alpha: f64 = theta.2;
+        let a: f64 = (*x.get_item(theta.0)).into();
+        let b: f64 = (*x.get_item(theta.1)).into();
+        a * alpha + b * (1.0 - alpha)
     }
 }
 
@@ -117,7 +48,7 @@ mod tests {
     use rand::thread_rng;
     use super::*;
     use vec2d::Vec2D;
-
+/*
     #[test]
     fn column_feature() {
         let n_columns = 4;
@@ -135,5 +66,5 @@ mod tests {
         for _ in 0..100 {
             assert!(fs.random_feature(&mut thread_rng()) < 4);
         }
-    }
+    }*/
 }

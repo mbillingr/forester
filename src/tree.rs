@@ -1,7 +1,5 @@
-use super::DeterministicSplitter;
-use super::FeatureSet;
+/*use super::DeterministicSplitter;
 use super::LeafPredictor;
-use super::OutcomeVariable;
 use super::Side;
 use super::Splitter;
 
@@ -17,13 +15,13 @@ enum Node<S: Splitter, L: LeafPredictor<X=S::X>>
 
 /// Generic decision tree.
 #[derive(Debug)]
-struct Tree<S: Splitter, P: LeafPredictor<X=S::X>>
+pub struct Tree<S: Splitter, P: LeafPredictor<X=S::X>>
 {
     nodes: Vec<Node<S, P>>,
 }
 
 impl<S: Splitter, P: LeafPredictor<X=S::X>> Tree<S, P> {
-    fn split_node(&mut self, n: usize, split: S) -> (usize, usize) {
+    pub fn split_node(&mut self, n: usize, split: S) -> (usize, usize) {
         let left = self.nodes.len();
         let right = left + 1;
         self.nodes.push(Node::Invalid);
@@ -37,7 +35,7 @@ impl<S: DeterministicSplitter, P: LeafPredictor<X=S::X>> Tree<S, P>
 where <P::Y as OutcomeVariable>::Item: Sized
 {
     /// Pass a sample `x` down the tree and predict output of final leaf.
-    fn predict(&self, x: &<S::X as FeatureSet>::Item) -> <P::Y as OutcomeVariable>::Item {
+    pub fn predict(&self, x: &<S::X as FeatureSet>::Item) -> <P::Y as OutcomeVariable>::Item {
         let mut n = 0;
         loop {
             match self.nodes[n] {
@@ -59,7 +57,6 @@ where <P::Y as OutcomeVariable>::Item: Sized
 
 #[cfg(test)]
 mod tests {
-    use std::marker::PhantomData;
     use super::*;
     use vec2d::Vec2D;
     use features::ColumnFeature;
@@ -68,8 +65,8 @@ mod tests {
 
     #[test]
     fn predict() {
-        let x: ColumnFeature<_> = Vec2D::from_slice(&[1, 2, 3, 4], 1).into();
-        let y = vec!(-1.0, -1.0, 1.0, 1.0);
+        //let x: ColumnFeature<_> = Vec2D::from_slice(&[1, 2, 3, 4], 1).into();
+        //let y = vec!(-1.0, -1.0, 1.0, 1.0);
 
         let tree: Tree<ThresholdSplitter<ColumnFeature<Vec2D<i32>>>, ConstMean<_, Vec<_>>> = Tree {
             nodes: vec!{
@@ -86,3 +83,4 @@ mod tests {
         assert_eq!(tree.predict(&[10]), 1.0);
     }
 }
+*/

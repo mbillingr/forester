@@ -2,7 +2,6 @@
 use std::ops;
 use std::slice;
 
-use super::Data;
 use super::FixedLength;
 use super::Shape2D;
 
