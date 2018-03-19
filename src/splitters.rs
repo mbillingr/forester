@@ -11,6 +11,8 @@ use super::DeterministicSplitter;
 use super::Feature;
 use super::Sample;
 use super::Side;
+use super::SplitCriterion;
+use super::SplitFitter;
 use super::Splitter;
 
 /// Use a simple threshold for deterministic split.
@@ -38,7 +40,7 @@ impl<D> Splitter for ThresholdSplitter<D>
 {
     type D = D;
 
-    fn new_random<R: Rng>(x: &D, rng: &mut R) -> Self
+    fn new_random(x: &D) -> Self
     {
         unimplemented!()
         /*let theta = x.random_feature(rng);
@@ -48,6 +50,10 @@ impl<D> Splitter for ThresholdSplitter<D>
             theta,
             threshold,
         }*/
+    }
+
+    fn theta(&self) -> &<Self::D as DataSet>::Theta {
+        &self.theta
     }
 }
 
@@ -62,5 +68,33 @@ impl<D> DeterministicSplitter for ThresholdSplitter<D>
         } else {
             Side::Right
         }
+    }
+}
+
+struct BestRandomSplit<S, C> {
+    n_splits: usize,
+    _p: PhantomData<(S, C)>,
+}
+
+impl<S: DeterministicSplitter, C: SplitCriterion<D=S::D>> SplitFitter for BestRandomSplit<S, C> {
+    type D = S::D;
+    type Split = S;
+    type Criterion = C;
+    fn find_split(&self, data: &Self::D) -> Option<(Self::Split, Vec<usize>, Vec<usize>)> {
+        /*let mut best_criterion = None;
+        let mut best_split = None;
+
+        let parent_criterion = C::calc_presplit(data);
+
+        for _ in 0..self.n_splits {
+            let split: S = Self::Split::new_random(data);
+
+            data.sort_by_feature(&split.theta());
+
+            // TODO: find split index, compare criterions
+
+            // TODO: what should we finally return?
+        }*/
+        unimplemented!()
     }
 }

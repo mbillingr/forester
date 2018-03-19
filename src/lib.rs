@@ -174,7 +174,8 @@ pub trait ProbabilisticLeafPredictor: LeafPredictor
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
 pub trait Splitter {
     type D: ?Sized + DataSet;
-    fn new_random<R: Rng>(x: &Self::D, rng: &mut R) -> Self;
+    fn new_random(x: &Self::D) -> Self;
+    fn theta(&self) -> &<Self::D as DataSet>::Theta;
 }
 
 /// Assigns a sample to either side of the split.
@@ -190,6 +191,14 @@ pub trait ProbabilisticSplitter: Splitter {
 
     /// Probability that the sample belongs to the right side of the split
     fn p_right(&self, x: &<Self::D as DataSet>::X) -> f64 { 1.0 - self.p_left(x) }
+}
+
+/// Find split
+trait SplitFitter {
+    type D: ?Sized + DataSet;
+    type Split: Splitter<D=Self::D>;
+    type Criterion: SplitCriterion<D=Self::D>;
+    fn find_split(&self, data: &Self::D) -> Option<(Self::Split, Vec<usize>, Vec<usize>)>;
 }
 
 
