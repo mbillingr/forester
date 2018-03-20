@@ -1,15 +1,11 @@
 use std::cmp;
 use std::f64;
-use std::marker::PhantomData;
-use std::ops;
 
-use rand::{Rand, Rng};
-use rand::distributions::{IndependentSample, Range};
+//use rand::{Rand, Rng};
+//use rand::distributions::{IndependentSample, Range};
 
 use super::Feature;
-use super::FixedLength;
-use super::Sample;
-use super::Shape2D;
+//use super::Sample;
 
 use get_item::GetItem;
 
@@ -46,13 +42,10 @@ where X: GetItem,
 
 #[cfg(test)]
 mod tests {
-    use rand::thread_rng;
     use super::*;
-    use vec2d::Vec2D;
 
     #[test]
     fn column_select() {
-        let n_columns = 4;
         let x = vec!(1, 2, 33, 4, 5);
 
         type CS = ColumnSelect;
@@ -64,7 +57,6 @@ mod tests {
 
     #[test]
     fn mix2() {
-        let n_columns = 4;
         let x = vec!(1, 2, 33, 4, 5);
 
         type CS = Mix2;

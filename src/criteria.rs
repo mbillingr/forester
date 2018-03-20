@@ -1,14 +1,11 @@
 
 use std::marker::PhantomData;
 
-use super::DataSet;
-use super::Float;
-use super::FixedLength;
 use super::Sample;
 use super::SplitCriterion;
 
 
-struct VarCriterion<D: ?Sized> {
+pub struct VarCriterion<D: ?Sized> {
     _p: PhantomData<D>
 }
 

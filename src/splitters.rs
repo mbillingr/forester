@@ -1,10 +1,8 @@
-use std::cmp;
 use std::marker::PhantomData;
-use std::ops;
 
-use rand::Rng;
+//use rand::Rng;
 //use rand::distributions::{IndependentSample, Range};
-use rand::distributions::range::SampleRange;
+//use rand::distributions::range::SampleRange;
 
 use super::DataSet;
 use super::DeterministicSplitter;
@@ -40,7 +38,7 @@ impl<D> Splitter for ThresholdSplitter<D>
 {
     type D = D;
 
-    fn new_random(x: &D) -> Self
+    fn new_random(_x: &D) -> Self
     {
         unimplemented!()
         /*let theta = x.random_feature(rng);

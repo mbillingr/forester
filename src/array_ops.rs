@@ -71,8 +71,6 @@ impl<T> Dot<[T;2]> for [T;2]
 #[cfg(test)]
 mod tests {
     use super::*;
-    use features::ColumnSelect;
-    use datasets::TupleSample;
 
     #[test]
     fn dot_vec() {

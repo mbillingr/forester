@@ -1,8 +1,5 @@
 use std::cmp;
-use std::fmt;
 use std::marker::PhantomData;
-use std::ops;
-use std::slice;
 
 use super::Feature;
 use super::Sample;

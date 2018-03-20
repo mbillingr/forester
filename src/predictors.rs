@@ -4,8 +4,6 @@ use std::iter;
 use std::ops;
 use std::marker::PhantomData;
 
-use super::DataSet;
-use super::FixedLength;
 use super::Float;
 use super::LeafPredictor;
 use super::ProbabilisticLeafPredictor;
@@ -34,7 +32,7 @@ impl<S: Sample> LeafPredictor for ConstMean<S::Y, S>
     type S = S;
     type D = [S];
 
-    fn predict(&self, s: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y {
+    fn predict(&self, _s: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y {
         self.value
     }
 
@@ -68,7 +66,7 @@ impl<S: Sample> LeafPredictor for LinearRegression<S::Y, S>
         self.intercept + x.dot(&self.weights)
     }
 
-    fn fit(data: &Self::D) -> Self {
+    fn fit(_data: &Self::D) -> Self {
         unimplemented!("LinearRegression::fit()")
     }
 }
@@ -86,7 +84,7 @@ impl<S: Sample<Y=f64>> LeafPredictor for ConstGaussian<S>
     type S = S;
     type D = [S];
 
-    fn predict(&self, x: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y {
+    fn predict(&self, _x: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y {
         self.mean
     }
 
@@ -125,7 +123,6 @@ impl<S: Sample<Y=f64>> ProbabilisticLeafPredictor for ConstGaussian<S>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vec2d::Vec2D;
     use features::ColumnSelect;
     use datasets::TupleSample;
 

@@ -2,12 +2,6 @@ extern crate rand;
 
 use std::cmp;
 use std::f64;
-use std::iter;
-use std::marker::PhantomData;
-use std::ops;
-use std::slice;
-
-use rand::Rng;
 
 pub mod array_ops;
 pub mod criteria;
@@ -17,7 +11,7 @@ pub mod get_item;
 pub mod predictors;
 pub mod splitters;
 pub mod tree;
-pub mod vec2d;
+//pub mod vec2d;
 
 /// The side of a split
 pub enum Side {
@@ -120,7 +114,7 @@ pub trait OutcomeVariable {
     fn for_each_mut<F: FnMut(&Self::Item)>(&self, f: F);
     #[inline] fn for_each<F: Fn(&Self::Item)>(&self, f: F) { self.for_each_mut(f) }
 }*/
-
+/*
 /// Type has a length
 pub trait FixedLength {
     fn len(&self) -> usize;
@@ -142,7 +136,7 @@ impl<'a, T> FixedLength for [T] {
         self.len()
     }
 }
-
+*/
 /// For comparing splits
 pub trait SplitCriterion {
     type D: ?Sized + DataSet;
