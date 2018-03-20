@@ -1,8 +1,9 @@
 
 use std::marker::PhantomData;
 
-use super::Sample;
 use super::SplitCriterion;
+use super::Real;
+use super::Sample;
 
 
 pub struct VarCriterion<D: ?Sized> {
@@ -11,30 +12,30 @@ pub struct VarCriterion<D: ?Sized> {
 
 impl<S> SplitCriterion for VarCriterion<S>
     where S: Sample,
-          S::Y: Copy + Into<f64>,
+          S::Y: Copy + Into<Real>,
 {
     type D = [S];
-    type C = f64;
+    type C = Real;
 
-    fn calc_presplit(data: &Self::D) -> f64 {
+    fn calc_presplit(data: &Self::D) -> Real {
         let mut sum = 0.0;
         let mut ssum = 0.0;
 
         for sample in data {
-            let yi: f64 = sample.get_y().into();
+            let yi: Real = sample.get_y().into();
             sum += yi;
             ssum += yi * yi;
         }
 
-        let n = data.len() as f64;
+        let n = data.len() as Real;
 
         let mean = sum / n;
         ssum / n - mean * mean
     }
 
-    fn calc_postsplit(yl: &Self::D, yr: &Self::D) -> f64 {
-        let a = yl.len() as f64;
-        let b = yr.len() as f64;
+    fn calc_postsplit(yl: &Self::D, yr: &Self::D) -> Real {
+        let a = yl.len() as Real;
+        let b = yr.len() as Real;
         (Self::calc_presplit(yl) * a + Self::calc_presplit(yr) * b) / (a + b)
     }
 }

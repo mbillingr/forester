@@ -1,24 +1,23 @@
 
-use std::f64;
-use std::iter;
 use std::ops;
 use std::marker::PhantomData;
 
-use super::Float;
 use super::LeafPredictor;
 use super::ProbabilisticLeafPredictor;
+use super::Real;
+use super::RealConstants;
 use super::Sample;
 
 use array_ops::Dot;
 
 #[derive(Debug)]
-pub struct ConstMean<T: Float, S: ?Sized> {
-    value: T,
+pub struct ConstMean<S: ?Sized> {
+    value: Real,
     _p: PhantomData<S>,
 }
 
-impl<T: Float, S: ?Sized> ConstMean<T, S> {
-    pub fn new(value: T) -> Self {
+impl<S: ?Sized> ConstMean<S> {
+    pub fn new(value: Real) -> Self {
         ConstMean {
             value,
             _p: PhantomData
@@ -26,8 +25,8 @@ impl<T: Float, S: ?Sized> ConstMean<T, S> {
     }
 }
 
-impl<S: Sample> LeafPredictor for ConstMean<S::Y, S>
-    where S::Y: Float + Copy + iter::Sum + ops::Div<Output=S::Y>
+impl<S: Sample<Y=Real>> LeafPredictor for ConstMean<S>
+    //where S::Y: Real + Copy + iter::Sum + ops::Div<Output=S::Y>
 {
     type S = S;
     type D = [S];
@@ -38,7 +37,7 @@ impl<S: Sample> LeafPredictor for ConstMean<S::Y, S>
 
     fn fit(data: &Self::D) -> Self {
         let sum: <Self::S as Sample>::Y = data.iter().map(|s| s.get_y()).sum();
-        let n = <Self::S as Sample>::Y::from_usize(data.len());
+        let n = data.len() as Real;
         ConstMean {
             value: sum / n,
             _p: PhantomData,
@@ -73,13 +72,13 @@ impl<S: Sample> LeafPredictor for LinearRegression<S::Y, S>
 
 #[derive(Debug)]
 pub struct ConstGaussian<S: ?Sized> {
-    mean: f64,
-    variance: f64,
+    mean: Real,
+    variance: Real,
 
     _p: PhantomData<S>,
 }
 
-impl<S: Sample<Y=f64>> LeafPredictor for ConstGaussian<S>
+impl<S: Sample<Y=Real>> LeafPredictor for ConstGaussian<S>
 {
     type S = S;
     type D = [S];
@@ -98,7 +97,7 @@ impl<S: Sample<Y=f64>> LeafPredictor for ConstGaussian<S>
             ssum += yi * yi;
         }
 
-        let n = S::Y::from_usize(data.len());
+        let n = data.len() as Real;
 
         let mean = sum / n;
         let variance = ssum / n - mean * mean;
@@ -111,11 +110,11 @@ impl<S: Sample<Y=f64>> LeafPredictor for ConstGaussian<S>
     }
 }
 
-impl<S: Sample<Y=f64>> ProbabilisticLeafPredictor for ConstGaussian<S>
+impl<S: Sample<Y=Real>> ProbabilisticLeafPredictor for ConstGaussian<S>
 {
-    fn prob(&self, s: &Self::S) -> f64 {
+    fn prob(&self, s: &Self::S) -> Real {
         let y = s.get_y();
-        f64::exp(-(y - self.mean).powi(2) / (2.0 * self.variance)) / (2.0 * f64::consts::PI * self.variance).sqrt()
+        Real::exp(-(y - self.mean).powi(2) / (2.0 * self.variance)) / (2.0 * Real::pi() * self.variance).sqrt()
     }
 }
 

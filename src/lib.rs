@@ -13,32 +13,22 @@ pub mod splitters;
 pub mod tree;
 //pub mod vec2d;
 
+type Real = f64;
+
+trait RealConstants {
+    #[inline(always)] fn pi() -> Real;
+    #[inline(always)] fn zero() -> Real {0.0}
+    #[inline(always)] fn one() -> Real {1.0}
+}
+
+impl RealConstants for Real {
+    #[inline(always)] fn pi() -> Real {f64::consts::PI}
+}
+
 /// The side of a split
 pub enum Side {
     Left,
     Right,
-}
-
-pub trait Float {
-    fn zero() -> Self;
-    fn one() -> Self;
-    fn from_usize(v: usize) -> Self;
-}
-
-impl Float for f32 {
-    fn zero() -> Self {0.0}
-    fn one() -> Self {0.0}
-    fn from_usize(v: usize) -> Self {
-        v as f32
-    }
-}
-
-impl Float for f64 {
-    fn zero() -> Self {0.0}
-    fn one() -> Self {0.0}
-    fn from_usize(v: usize) -> Self {
-        v as f64
-    }
 }
 
 pub trait Feature<X> {
@@ -162,7 +152,7 @@ pub trait LeafPredictor
 pub trait ProbabilisticLeafPredictor: LeafPredictor
 {
     /// probability of given output `p(y|x)`
-    fn prob(&self, s: &Self::S) -> f64;
+    fn prob(&self, s: &Self::S) -> Real;
 }
 
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
@@ -181,10 +171,10 @@ pub trait DeterministicSplitter: Splitter {
 /// Assigns a sample to both sides of the split with some probability each.
 pub trait ProbabilisticSplitter: Splitter {
     /// Probability that the sample belongs to the left side of the split
-    fn p_left(&self, x: &<Self::D as DataSet>::X) -> f64;
+    fn p_left(&self, x: &<Self::D as DataSet>::X) -> Real;
 
     /// Probability that the sample belongs to the right side of the split
-    fn p_right(&self, x: &<Self::D as DataSet>::X) -> f64 { 1.0 - self.p_left(x) }
+    fn p_right(&self, x: &<Self::D as DataSet>::X) -> Real { 1.0 - self.p_left(x) }
 }
 
 /// Find split

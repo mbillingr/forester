@@ -69,7 +69,7 @@ mod tests {
     fn predict() {
         type Sample = TupleSample<ColumnSelect, [i32;1], f64>;
 
-        let tree: Tree<ThresholdSplitter<[Sample]>, ConstMean<_, _>> = Tree {
+        let tree: Tree<ThresholdSplitter<[Sample]>, ConstMean<_>> = Tree {
             nodes: vec!{
                 Node::Split{split: ThresholdSplitter::new(0, 2), left: 1, right: 2},
                 Node::Leaf(ConstMean::new(-1.0)),

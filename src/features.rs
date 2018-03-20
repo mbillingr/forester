@@ -1,11 +1,10 @@
 use std::cmp;
-use std::f64;
 
 //use rand::{Rand, Rng};
 //use rand::distributions::{IndependentSample, Range};
 
 use super::Feature;
-//use super::Sample;
+use super::Real;
 
 use get_item::GetItem;
 
@@ -27,15 +26,15 @@ pub struct Mix2;
 
 impl<X> Feature<X> for Mix2
 where X: GetItem,
-      X::Item: Copy + Into<f64>,
+      X::Item: Copy + Into<Real>,
 {
-    type Theta = (usize, usize, f64);
-    type F = f64;
+    type Theta = (usize, usize, Real);
+    type F = Real;
 
-    fn get_feature(x: &X, theta: &Self::Theta) -> f64 {
-        let alpha: f64 = theta.2;
-        let a: f64 = (*x.get_item(theta.0)).into();
-        let b: f64 = (*x.get_item(theta.1)).into();
+    fn get_feature(x: &X, theta: &Self::Theta) -> Real {
+        let alpha: Real = theta.2;
+        let a: Real = (*x.get_item(theta.0)).into();
+        let b: Real = (*x.get_item(theta.1)).into();
         a * alpha + b * (1.0 - alpha)
     }
 }
