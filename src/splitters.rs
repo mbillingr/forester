@@ -96,9 +96,18 @@ impl<D> DeterministicSplitter for ThresholdSplitter<D>
     }
 }
 
-struct BestRandomSplit<S, C> {
+pub struct BestRandomSplit<S, C> {
     n_splits: usize,
     _p: PhantomData<(S, C)>,
+}
+
+impl<S, C> BestRandomSplit<S, C> {
+    pub fn new(n_splits: usize) -> Self {
+        BestRandomSplit {
+            n_splits,
+            _p: PhantomData,
+        }
+    }
 }
 
 impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>> SplitFitter for BestRandomSplit<S, C> {

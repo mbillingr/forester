@@ -1,9 +1,12 @@
+use std::fmt;
+use std::marker::PhantomData;
 
 use super::DataSet;
 use super::DeterministicSplitter;
 use super::LeafPredictor;
 use super::Sample;
 use super::Side;
+use super::SplitFitter;
 use super::Splitter;
 
 /// A decision tree node. Can be either a split node with a Splitter and two children, or a leaf
@@ -56,13 +59,51 @@ impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::
     }
 }
 
+struct TreeBuilder<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> {
+    split_finder: S,
+    min_samples_split: usize,
+    _p: PhantomData<(S, P)>
+}
+
+impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> TreeBuilder<S, P>
+    where S::Split: DeterministicSplitter
+{
+    pub fn fit(&self, data: &mut S::D) -> Tree<S::Split, P> {
+        let mut tree = Tree {nodes: vec![Node::Invalid]};
+        self.recursive_fit(&mut tree, data, 0);
+        tree
+    }
+
+    fn recursive_fit(&self, tree: &mut Tree<S::Split, P>, data: &mut S::D, node: usize) {
+        if data.n_samples() < self.min_samples_split {
+            tree.nodes[node] = Node::Leaf(P::fit(data));
+            return
+        }
+        let split = self.split_finder.find_split(data);
+        match split {
+            None => tree.nodes[node] = Node::Leaf(P::fit(data)),
+            Some(split) => {
+                let i = data.partition_by_split(&split);
+                let (left, right) = data.subsets(i);
+
+                let (l, r) = tree.split_node(node, split);
+
+                self.recursive_fit(tree, left, l);
+                self.recursive_fit(tree, right, r);
+            }
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use criteria::VarCriterion;
     use datasets::TupleSample;
     use features::ColumnSelect;
     use predictors::ConstMean;
+    use splitters::BestRandomSplit;
     use splitters::ThresholdSplitter;
 
     #[test]
@@ -82,5 +123,38 @@ mod tests {
         assert_eq!(tree.predict(&[3]), 1.0);
         assert_eq!(tree.predict(&[4]), 1.0);
         assert_eq!(tree.predict(&[10]), 1.0);
+    }
+
+    #[test]
+    fn fit() {
+        type Sample = TupleSample<ColumnSelect, [i32;1], f64>;
+        type Data = [Sample];
+
+        let mut data: Vec<Sample> = vec![
+            TupleSample::new([0], 1.0),
+            TupleSample::new([1], 2.0),
+            TupleSample::new([2], 1.0),
+            TupleSample::new([3], 2.0),
+            TupleSample::new([4], 11.0),
+            TupleSample::new([5], 12.0),
+            TupleSample::new([6], 11.0),
+            TupleSample::new([7], 12.0),
+            TupleSample::new([8], 5.0),
+            TupleSample::new([9], 5.0),
+            TupleSample::new([10], 5.0),
+            TupleSample::new([11], 5.0),
+        ];
+
+        let tb: TreeBuilder<BestRandomSplit<ThresholdSplitter<_>, VarCriterion<_>>, ConstMean<Sample>> = TreeBuilder {
+            split_finder: BestRandomSplit::new(1),
+            min_samples_split: 2,
+            _p: PhantomData,
+        };
+
+        let tree = tb.fit(&mut data);
+
+        for sample in data {
+            assert_eq!(tree.predict(&sample.get_x()), sample.get_y());
+        }
     }
 }
