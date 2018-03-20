@@ -3,14 +3,16 @@ extern crate rand;
 use std::cmp;
 use std::f64;
 
+pub mod api;
 pub mod array_ops;
 pub mod criteria;
 pub mod datasets;
 pub mod features;
+pub mod ensemble;
 pub mod get_item;
 pub mod predictors;
 pub mod splitters;
-pub mod tree;
+pub mod d_tree;
 //pub mod vec2d;
 
 use array_ops::Partition;
@@ -101,46 +103,6 @@ where S: Sample,
     }
 }
 
-/*pub trait FeatureSet {
-    type Item: ?Sized + Sample;
-    fn n_samples(&self) -> usize;
-    fn get_sample(&self, n: usize) -> &Self::Item;
-    fn random_feature<R: Rng>(&self, rng: &mut R) -> <Self::Item as Sample>::Theta;
-    fn minmax(&self, theta: &<Self::Item as Sample>::Theta) -> Option<(<Self::Item as Sample>::Feature, <Self::Item as Sample>::Feature)>;
-
-    fn for_each_mut<F: FnMut(&Self::Item)>(&self, f: F);
-    #[inline] fn for_each<F: Fn(&Self::Item)>(&self, f: F) { self.for_each_mut(f) }
-}
-
-pub trait OutcomeVariable {
-    type Item: ?Sized;
-    fn n_samples(&self) -> usize;
-    fn for_each_mut<F: FnMut(&Self::Item)>(&self, f: F);
-    #[inline] fn for_each<F: Fn(&Self::Item)>(&self, f: F) { self.for_each_mut(f) }
-}*/
-/*
-/// Type has a length
-pub trait FixedLength {
-    fn len(&self) -> usize;
-}
-
-pub trait Shape2D {
-    fn n_rows(&self) -> usize;
-    fn n_cols(&self) -> usize;
-}
-
-impl<'a, T> FixedLength for &'a [T] {
-    fn len(&self) -> usize {
-        (self as &[T]).len()
-    }
-}
-
-impl<'a, T> FixedLength for [T] {
-    fn len(&self) -> usize {
-        self.len()
-    }
-}
-*/
 /// For comparing splits
 pub trait SplitCriterion {
     type D: ?Sized + DataSet;
@@ -190,16 +152,37 @@ pub trait ProbabilisticSplitter: Splitter {
     fn p_right(&self, x: &<Self::D as DataSet>::X) -> Real { 1.0 - self.p_left(x) }
 }
 
-trait RandomSplit<S: Splitter> {
+/// Trait that allows a Splitter to generate random splits
+pub trait RandomSplit<S: Splitter> {
     fn new_random(data: &S::D) -> S;
 }
 
 /// Find split
-trait SplitFitter {
+pub trait SplitFitter {
     type D: ?Sized + DataSet;
     type Split: Splitter<D=Self::D>;
     type Criterion: SplitCriterion<D=Self::D>;
     fn find_split(&self, data: &mut Self::D) -> Option<Self::Split>;
+}
+
+/// Trait that allows a type to be fitted
+pub trait Learner<D: ?Sized + DataSet, Output=Self> {
+    fn fit(&self, data: &D) -> Output;
+}
+
+/// Trait that allows a type to mutate the data set while being fitted
+pub trait LearnerMut<D: ?Sized + DataSet, Output=Self> {
+    fn fit(&self, data: &mut D) -> Output;
+}
+
+/// Trait that allows a type to predict values
+pub trait Predictor<X, Y> {
+    fn predict(&self, s: &X) -> Y;
+}
+
+/// Trait that estimates the (posterior) probability of a sample.
+pub trait ProbabilisticPredictor<S> {
+    fn prob(&self, s: &S) -> Real;
 }
 
 
