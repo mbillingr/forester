@@ -13,6 +13,8 @@ pub mod splitters;
 pub mod tree;
 //pub mod vec2d;
 
+use array_ops::Partition;
+
 type Real = f64;
 
 trait RealConstants {
@@ -26,6 +28,7 @@ impl RealConstants for Real {
 }
 
 /// The side of a split
+#[derive(Debug, PartialEq, Eq)]
 pub enum Side {
     Left,
     Right,
@@ -33,13 +36,14 @@ pub enum Side {
 
 pub trait Feature<X> {
     type Theta;
-    type F: cmp::PartialOrd;
+    type F: cmp::PartialOrd + Clone;
     fn get_feature(x: &X, theta: &Self::Theta) -> Self::F;
+    fn random(x: &X) -> Self::Theta;
 }
 
 pub trait Sample {
     type Theta;
-    type F: cmp::PartialOrd;
+    type F: cmp::PartialOrd + Clone;
     type FX: Feature<Self::X, Theta=Self::Theta, F=Self::F>;
     type X;
     type Y;
@@ -49,14 +53,20 @@ pub trait Sample {
 
 pub trait DataSet {
     type Theta;
-    type F: cmp::PartialOrd;
+    type F: cmp::PartialOrd + Clone;
     type FX: Feature<Self::X, Theta=Self::Theta, F=Self::F>;
     type X;
     type Y;
     type Item: Sample<Theta=Self::Theta, F=Self::F, FX=Self::FX, X=Self::X, Y=Self::Y>;
 
     fn n_samples(&self) -> usize;
-    fn sort_by_feature(&mut self, theta: &Self::Theta);
+    fn partition_by_split<S: DeterministicSplitter<D=Self>>(&mut self, s: &S) -> usize;
+
+    fn subsets(&mut self, i: usize) -> (&mut Self, &mut Self);
+
+    fn random_feature(&self) -> Self::Theta;
+
+    fn reduce_feature<B, F: FnMut(B, Self::F) -> B>(&self, theta: &Self::Theta, init: B, f: F) -> B;
 }
 
 impl<S> DataSet for [S]
@@ -74,16 +84,20 @@ where S: Sample,
         self.len()
     }
 
-    fn sort_by_feature(&mut self, theta: &Self::Theta) {
-        self.sort_unstable_by(|sa, sb| {
-            let fa = S::FX::get_feature(&sa.get_x(), theta);
-            let fb = S::FX::get_feature(&sb.get_x(), theta);
-            // TODO: We probably don't want to panic on e.g. NaN values -- but how shall we treat them?
-            match fa.partial_cmp(&fb) {
-                Some(o) => o,
-                None => panic!("unable to compare features: ")//{:?} < {:?}", fa, fb)
-            }
-        });
+    fn partition_by_split<SP: DeterministicSplitter<D=Self>>(&mut self, split: &SP) -> usize {
+        self.partition(|sample| split.split(&sample.get_x()) == Side::Left)
+    }
+
+    fn subsets(&mut self, i: usize) -> (&mut Self, &mut Self) {
+        self.split_at_mut(i)
+    }
+
+    fn random_feature(&self) -> Self::Theta {
+        S::FX::random(&self[0].get_x())
+    }
+
+    fn reduce_feature<B, F: FnMut(B, Self::F) -> B>(&self, theta: &Self::Theta, init: B, f: F) -> B {
+        self.iter().map(|s| Self::FX::get_feature(&s.get_x(), theta)).fold(init, f)
     }
 }
 
@@ -158,7 +172,6 @@ pub trait ProbabilisticLeafPredictor: LeafPredictor
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
 pub trait Splitter {
     type D: ?Sized + DataSet;
-    fn new_random(x: &Self::D) -> Self;
     fn theta(&self) -> &<Self::D as DataSet>::Theta;
 }
 
@@ -177,12 +190,16 @@ pub trait ProbabilisticSplitter: Splitter {
     fn p_right(&self, x: &<Self::D as DataSet>::X) -> Real { 1.0 - self.p_left(x) }
 }
 
+trait RandomSplit<S: Splitter> {
+    fn new_random(data: &S::D) -> S;
+}
+
 /// Find split
 trait SplitFitter {
     type D: ?Sized + DataSet;
     type Split: Splitter<D=Self::D>;
     type Criterion: SplitCriterion<D=Self::D>;
-    fn find_split(&self, data: &Self::D) -> Option<(Self::Split, Vec<usize>, Vec<usize>)>;
+    fn find_split(&self, data: &mut Self::D) -> Option<Self::Split>;
 }
 
 

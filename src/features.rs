@@ -1,6 +1,6 @@
 use std::cmp;
 
-//use rand::{Rand, Rng};
+use rand::{thread_rng, Rand, Rng};
 //use rand::distributions::{IndependentSample, Range};
 
 use super::Feature;
@@ -8,6 +8,7 @@ use super::Real;
 
 use get_item::GetItem;
 
+#[derive(Debug)]
 pub struct ColumnSelect;
 
 impl<X> Feature<X> for ColumnSelect
@@ -20,8 +21,13 @@ where X: GetItem,
     fn get_feature(x: &X, theta: &usize) -> Self::F {
         x.get_item(*theta).clone()
     }
+
+    fn random(x: &X) -> Self::Theta {
+        thread_rng().gen_range(0, x.n_items())
+    }
 }
 
+#[derive(Debug)]
 pub struct Mix2;
 
 impl<X> Feature<X> for Mix2
@@ -36,6 +42,15 @@ where X: GetItem,
         let a: Real = (*x.get_item(theta.0)).into();
         let b: Real = (*x.get_item(theta.1)).into();
         a * alpha + b * (1.0 - alpha)
+    }
+
+    fn random(x: &X) -> Self::Theta {
+        let a = thread_rng().gen_range(0, x.n_items());
+        let b = thread_rng().gen_range(0, x.n_items());
+        let alpha = thread_rng().gen();
+        debug_assert!(alpha >= 0.0);
+        debug_assert!(alpha <= 1.0);
+        (a, b, alpha)
     }
 }
 

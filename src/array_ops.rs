@@ -68,6 +68,29 @@ impl<T> Dot<[T;2]> for [T;2]
     }
 }
 
+/// In-place partitioning
+pub trait Partition<T> {
+    /// Partition `self` in place so that all elements for which the predicate holds are placed in
+    /// the beginning. Return index of first element for which the predicate does not hold.
+    fn partition<F: FnMut(&T) -> bool>(&mut self, predicate: F) -> usize;
+}
+
+impl<T> Partition<T> for [T]
+{
+    /// Partition a slice in place in O(n).
+    // TODO: possible speed up with unsafe code? (less bounds checks, presumably)
+    fn partition<F: FnMut(&T) -> bool>(&mut self, mut predicate: F) -> usize {
+        let mut target_index = 0;
+        for i in 0..self.len() {
+            if predicate(&self[i]) {
+                self.swap(target_index, i);
+                target_index += 1;
+            }
+        }
+        target_index
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -92,5 +115,20 @@ mod tests {
         let a = [1, 2, 1];
         let b = [2, 0, -3];
         assert_eq!(a.dot(&b), -1);
+    }
+
+    #[test]
+    fn partition() {
+        let mut x = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+        let i = x.partition(|&xi| xi < 5);
+        assert_eq!(i, 5);
+        assert!(x[..i].iter().all(|&xi| xi < 5));
+        assert!(x[i..].iter().all(|&xi| xi >= 5));
+
+        // correctly partitioned sequence stays unchanged
+        let mut x = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let i = x.partition(|&xi| xi <= 3);
+        assert_eq!(i, 4);
+        assert_eq!(x, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 }

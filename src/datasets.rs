@@ -12,7 +12,7 @@ trait Sortable<T> {
         where F: FnMut(&T, &T) -> cmp::Ordering;
 }
 
-
+#[derive(Debug)]
 pub struct TupleSample<FX, X, Y> {
     data: (X, Y),
     _p: PhantomData<FX>,
@@ -58,6 +58,7 @@ mod tests {
     use super::*;
     use features::{ColumnSelect, Mix2};
     use super::super::DataSet;
+    use splitters::ThresholdSplitter;
 
     #[test]
     fn dataset_sort() {
@@ -73,21 +74,23 @@ mod tests {
         assert_eq!(ColumnSelect::get_feature(&data[0].get_x(), &1), 3);
         assert_eq!(data.n_samples(), 4);
 
-        data.sort_by_feature(&1);
+        let i = data.partition_by_split(&ThresholdSplitter::new(1, 1));
+        assert_eq!(i, 2);
         assert_eq!(data[0].get_y(), 2);
         assert_eq!(data[1].get_y(), 3);
-        assert_eq!(data[2].get_y(), 4);
-        assert_eq!(data[3].get_y(), 1);
+        assert_eq!(data[2].get_y(), 1);
+        assert_eq!(data[3].get_y(), 4);
 
         {
             let (a, _b) = data.split_at_mut(2);
-            a.sort_by_feature(&0);
+            let i = a.partition_by_split(&ThresholdSplitter::new(0, 1));
+            assert_eq!(i, 1);
         }
 
         assert_eq!(data[0].get_y(), 3);
         assert_eq!(data[1].get_y(), 2);
-        assert_eq!(data[2].get_y(), 4);
-        assert_eq!(data[3].get_y(), 1);
+        assert_eq!(data[2].get_y(), 1);
+        assert_eq!(data[3].get_y(), 4);
 
     }
 }

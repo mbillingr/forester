@@ -1,6 +1,7 @@
 pub trait GetItem {
     type Item;
     fn get_item(&self, i: usize) -> &Self::Item;
+    fn n_items(&self) -> usize;
 }
 
 impl<T> GetItem for [T] {
@@ -8,6 +9,7 @@ impl<T> GetItem for [T] {
     fn get_item(&self, i: usize) -> &T {
         &self[i]
     }
+    fn n_items(&self) -> usize {self.len()}
 }
 
 impl<T> GetItem for Vec<T> {
@@ -15,6 +17,7 @@ impl<T> GetItem for Vec<T> {
     fn get_item(&self, i: usize) -> &T {
         &self[i]
     }
+    fn n_items(&self) -> usize {self.len()}
 }
 
 // TODO: Implement GetItem for many more array sizes... (macro!)
@@ -24,6 +27,7 @@ impl<T> GetItem for [T; 0] {
     fn get_item(&self, _: usize) -> &T {
         panic!("Getting item from zero-length array")
     }
+    fn n_items(&self) -> usize {0}
 }
 
 impl<T> GetItem for [T; 1] {
@@ -31,6 +35,7 @@ impl<T> GetItem for [T; 1] {
     fn get_item(&self, i: usize) -> &T {
         &self[i]
     }
+    fn n_items(&self) -> usize {1}
 }
 
 impl<T> GetItem for [T; 2] {
@@ -38,6 +43,7 @@ impl<T> GetItem for [T; 2] {
     fn get_item(&self, i: usize) -> &T {
         &self[i]
     }
+    fn n_items(&self) -> usize {2}
 }
 
 impl<T> GetItem for [T; 3] {
@@ -45,4 +51,5 @@ impl<T> GetItem for [T; 3] {
     fn get_item(&self, i: usize) -> &T {
         &self[i]
     }
+    fn n_items(&self) -> usize {3}
 }
