@@ -11,6 +11,7 @@ use super::Sample;
 use super::Splitter;
 use super::SplitFitter;
 
+use array_ops::IterMean;
 use d_tree::{DeterministicTree, DeterministicTreeBuilder};
 
 /// Generic decision forest.
@@ -22,19 +23,39 @@ pub struct Ensemble<X, Y, P: Predictor<X, Y>>
 }
 
 impl<X, Y, P: Predictor<X, Y>> Predictor<X, Y> for Ensemble<X, Y, P>
-    where Y: iter::Sum + From<usize> + ops::Div<Output=Y>
+    where Y: IterMean<Y>
 {
     fn predict(&self, x: &X) -> Y {
-        self.estimators.iter().map(|tree| tree.predict(x)).sum::<Y>() / Y::from(self.estimators.len())
+        IterMean::mean(self.estimators.iter().map(|tree| tree.predict(x)))
     }
 }
 
 
 #[derive(Debug)]
-struct EnsembleBuilder<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> {
+pub struct EnsembleBuilder<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> {
     n_estimators: usize,
     estimator_builder: B,
     _p: PhantomData<(P, D)>,
+}
+
+impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> EnsembleBuilder<D, B, P> {
+    fn new(n_estimators: usize) -> EnsembleBuilder<D, B, P> {
+        EnsembleBuilder {
+            n_estimators,
+            estimator_builder: B::default(),
+            _p: PhantomData
+        }
+    }
+}
+
+impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> Default for EnsembleBuilder<D, B, P> {
+    fn default() -> EnsembleBuilder<D, B, P> {
+        EnsembleBuilder {
+            n_estimators: 100,
+            estimator_builder: B::default(),
+            _p: PhantomData
+        }
+    }
 }
 
 impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> LearnerMut<D,  Ensemble<D::X, D::Y, P>> for EnsembleBuilder<D, B, P>

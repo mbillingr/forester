@@ -114,6 +114,16 @@ impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Determ
     }
 }
 
+impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Default for DeterministicTreeBuilder<S, P> {
+    fn default() -> DeterministicTreeBuilder<S, P> {
+        DeterministicTreeBuilder {
+            split_finder: S::default(),
+            min_samples_split: 2,
+            _p: PhantomData
+        }
+    }
+}
+
 impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> LearnerMut<S::D, DeterministicTree<S::Split, P>> for DeterministicTreeBuilder<S, P>
     where S::Split: DeterministicSplitter
 {

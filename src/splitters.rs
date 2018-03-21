@@ -110,6 +110,15 @@ impl<S, C> BestRandomSplit<S, C> {
     }
 }
 
+impl<S, C> Default for BestRandomSplit<S, C> {
+    fn default() -> Self {
+        BestRandomSplit {
+            n_splits: 10,
+            _p: PhantomData,
+        }
+    }
+}
+
 impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>> SplitFitter for BestRandomSplit<S, C> {
     type D = S::D;
     type Split = S;

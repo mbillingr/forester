@@ -158,7 +158,7 @@ pub trait RandomSplit<S: Splitter> {
 }
 
 /// Find split
-pub trait SplitFitter {
+pub trait SplitFitter: Default {
     type D: ?Sized + DataSet;
     type Split: Splitter<D=Self::D>;
     type Criterion: SplitCriterion<D=Self::D>;
@@ -166,12 +166,12 @@ pub trait SplitFitter {
 }
 
 /// Trait that allows a type to be fitted
-pub trait Learner<D: ?Sized + DataSet, Output=Self> {
+pub trait Learner<D: ?Sized + DataSet, Output=Self>: Default {
     fn fit(&self, data: &D) -> Output;
 }
 
 /// Trait that allows a type to mutate the data set while being fitted
-pub trait LearnerMut<D: ?Sized + DataSet, Output=Self> {
+pub trait LearnerMut<D: ?Sized + DataSet, Output=Self>: Default {
     fn fit(&self, data: &mut D) -> Output;
 }
 
