@@ -12,6 +12,14 @@ impl<T> GetItem for [T] {
     fn n_items(&self) -> usize {self.len()}
 }
 
+impl<'a, T> GetItem for &'a [T] {
+    type Item = T;
+    fn get_item(&self, i: usize) -> &T {
+        &self[i]
+    }
+    fn n_items(&self) -> usize {self.len()}
+}
+
 impl<T> GetItem for Vec<T> {
     type Item = T;
     fn get_item(&self, i: usize) -> &T {
@@ -47,6 +55,46 @@ impl<T> GetItem for [T; 2] {
 }
 
 impl<T> GetItem for [T; 3] {
+    type Item = T;
+    fn get_item(&self, i: usize) -> &T {
+        &self[i]
+    }
+    fn n_items(&self) -> usize {3}
+}
+
+impl<T> GetItem for [T; 4] {
+    type Item = T;
+    fn get_item(&self, i: usize) -> &T {
+        &self[i]
+    }
+    fn n_items(&self) -> usize {3}
+}
+
+impl<T> GetItem for [T; 5] {
+    type Item = T;
+    fn get_item(&self, i: usize) -> &T {
+        &self[i]
+    }
+    fn n_items(&self) -> usize {3}
+}
+
+impl<T> GetItem for [T; 10] {
+    type Item = T;
+    fn get_item(&self, i: usize) -> &T {
+        &self[i]
+    }
+    fn n_items(&self) -> usize {3}
+}
+
+impl<T> GetItem for [T; 20] {
+    type Item = T;
+    fn get_item(&self, i: usize) -> &T {
+        &self[i]
+    }
+    fn n_items(&self) -> usize {3}
+}
+
+impl<T> GetItem for [T; 30] {
     type Item = T;
     fn get_item(&self, i: usize) -> &T {
         &self[i]

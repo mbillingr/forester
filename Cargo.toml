@@ -5,3 +5,10 @@ authors = ["Martin Billinger <flkazemakase@gmail.com>"]
 
 [dependencies]
 rand = "0.4"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "benchmark"
+harness = false

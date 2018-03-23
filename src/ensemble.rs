@@ -51,7 +51,7 @@ impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> Ensembl
 impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> Default for EnsembleBuilder<D, B, P> {
     fn default() -> EnsembleBuilder<D, B, P> {
         EnsembleBuilder {
-            n_estimators: 100,
+            n_estimators: 10,
             estimator_builder: B::default(),
             _p: PhantomData
         }
