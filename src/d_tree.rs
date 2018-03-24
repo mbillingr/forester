@@ -79,15 +79,15 @@ pub struct DeterministicTreeBuilder<S: SplitFitter, P: LeafPredictor<S=<S::D as 
     _p: PhantomData<(S, P)>
 }
 
-/*
-impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> DeterministicTreeBuilder<S, P>
-    where S::Split: ProbabilisticSplitter
-{
-    pub fn p_fit(&self, data: &mut S::D) -> DeterministicTree<S::Split, P> {
-        unimplemented!()
+impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> DeterministicTreeBuilder<S, P> {
+    fn new(split_finder: S, min_samples_split: usize) -> DeterministicTreeBuilder<S, P> {
+        DeterministicTreeBuilder {
+            split_finder,
+            min_samples_split,
+            _p: PhantomData
+        }
     }
 }
-*/
 
 
 impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> DeterministicTreeBuilder<S, P>

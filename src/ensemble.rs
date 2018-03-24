@@ -39,10 +39,10 @@ pub struct EnsembleBuilder<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predicto
 }
 
 impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> EnsembleBuilder<D, B, P> {
-    fn new(n_estimators: usize) -> EnsembleBuilder<D, B, P> {
+    fn new(n_estimators: usize, estimator_builder: B) -> EnsembleBuilder<D, B, P> {
         EnsembleBuilder {
             n_estimators,
-            estimator_builder: B::default(),
+            estimator_builder,
             _p: PhantomData
         }
     }
