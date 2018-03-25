@@ -28,10 +28,11 @@ impl<S: ?Sized> ConstMean<S> {
 impl<S: Sample<Y=Real>> LeafPredictor for ConstMean<S>
     //where S::Y: Real + Copy + iter::Sum + ops::Div<Output=S::Y>
 {
+    type Output = S::Y;
     type S = S;
     type D = [S];
 
-    fn predict(&self, _s: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y {
+    fn predict(&self, _s: &<Self::S as Sample>::X) -> Self::Output {
         self.value
     }
 
@@ -57,11 +58,12 @@ impl<S: Sample> LeafPredictor for LinearRegression<S::Y, S>
     where S::Y: Copy + ops::Mul<Output=S::Y> + ops::Add<Output=S::Y>,
           S::X: Dot<[S::Y], Output=S::Y>
 {
+    type Output = S::Y;
     type S = S;
     type D = [S];
 
     /// predicted value
-    fn predict(&self, x: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y {
+    fn predict(&self, x: &<Self::S as Sample>::X) -> Self::Output {
         self.intercept + x.dot(&self.weights)
     }
 
@@ -80,10 +82,12 @@ pub struct ConstGaussian<S: ?Sized> {
 
 impl<S: Sample<Y=Real>> LeafPredictor for ConstGaussian<S>
 {
+
+    type Output = S::Y;
     type S = S;
     type D = [S];
 
-    fn predict(&self, _x: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y {
+    fn predict(&self, _x: &<Self::S as Sample>::X) -> Self::Output {
         self.mean
     }
 

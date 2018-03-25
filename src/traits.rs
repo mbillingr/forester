@@ -102,11 +102,12 @@ pub trait SplitCriterion {
 /// Prediction of the final Leaf value.
 pub trait LeafPredictor
 {
+    type Output;
     type S: Sample;
     type D: ?Sized + DataSet;
 
     /// predicted value
-    fn predict(&self, s: &<Self::S as Sample>::X) -> <Self::S as Sample>::Y;
+    fn predict(&self, s: &<Self::S as Sample>::X) -> Self::Output;
 
     /// fit predictor to data
     fn fit(data: &Self::D) -> Self;

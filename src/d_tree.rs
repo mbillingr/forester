@@ -50,10 +50,10 @@ impl<S: ProbabilisticSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::
 }
 */
 
-impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Predictor<<P::S as Sample>::X, <P::S as Sample>::Y> for DeterministicTree<S, P>
+impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Predictor<<P::S as Sample>::X, P::Output> for DeterministicTree<S, P>
 {
     /// Pass a sample `x` down the tree and predict output of final leaf.
-    fn predict(&self, x: &<P::S as Sample>::X) -> <P::S as Sample>::Y {
+    fn predict(&self, x: &<P::S as Sample>::X) -> P::Output {
         let mut n = 0;
         loop {
             match self.nodes[n] {
