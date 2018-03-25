@@ -68,21 +68,21 @@ fn gen_data_ref() -> Vec<Sample<&'static [f64], f64>> {
 fn array_data(c: &mut Criterion) {
     let mut data = gen_data_array();
     c.bench_function("array_data", move |b| b.iter(|| {
-        let model = Builder::default().fit(&mut data);
+        let model = TreeBuilder::default().fit(&mut data);
     }));
 }
 
 fn vec_data(c: &mut Criterion) {
     let mut data = gen_data_vec();
     c.bench_function("vec_data", move |b| b.iter(|| {
-        let model = Builder::default().fit(&mut data);
+        let model = TreeBuilder::default().fit(&mut data);
     }));
 }
 
 fn ref_data(c: &mut Criterion) {
     let mut data = gen_data_ref();
     c.bench_function("ref_data", move |b| b.iter(|| {
-        let model = Builder::default().fit(&mut data);
+        let model = TreeBuilder::default().fit(&mut data);
     }));
 }
 
