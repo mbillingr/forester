@@ -16,30 +16,30 @@ use d_tree::{DeterministicTree, DeterministicTreeBuilder};
 
 /// Generic decision forest.
 #[derive(Debug)]
-pub struct Ensemble<X, Y, P: Predictor<X, Y>>
+pub struct Ensemble<X, Z, P: Predictor<X, Z>>
 {
     estimators: Vec<P>,
-    _p: PhantomData<(X, Y)>,
+    _p: PhantomData<(X, Z)>,
 }
 
-impl<X, Y, P: Predictor<X, Y>> Predictor<X, Y> for Ensemble<X, Y, P>
-    where Y: IterMean<Y>
+impl<X, Z, P: Predictor<X, Z>> Predictor<X, Z> for Ensemble<X, Z, P>
+    where Z: IterMean<Z>
 {
-    fn predict(&self, x: &X) -> Y {
+    fn predict(&self, x: &X) -> Z {
         IterMean::mean(self.estimators.iter().map(|tree| tree.predict(x)))
     }
 }
 
 
 #[derive(Debug)]
-pub struct EnsembleBuilder<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> {
+pub struct EnsembleBuilder<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> {
     n_estimators: usize,
     estimator_builder: B,
-    _p: PhantomData<(P, D)>,
+    _p: PhantomData<(Z, P, D)>,
 }
 
-impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> EnsembleBuilder<D, B, P> {
-    fn new(n_estimators: usize, estimator_builder: B) -> EnsembleBuilder<D, B, P> {
+impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> EnsembleBuilder<Z, D, B, P> {
+    fn new(n_estimators: usize, estimator_builder: B) -> EnsembleBuilder<Z, D, B, P> {
         EnsembleBuilder {
             n_estimators,
             estimator_builder,
@@ -48,8 +48,8 @@ impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> Ensembl
     }
 }
 
-impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> Default for EnsembleBuilder<D, B, P> {
-    fn default() -> EnsembleBuilder<D, B, P> {
+impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> Default for EnsembleBuilder<Z, D, B, P> {
+    fn default() -> EnsembleBuilder<Z, D, B, P> {
         EnsembleBuilder {
             n_estimators: 10,
             estimator_builder: B::default(),
@@ -58,9 +58,9 @@ impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> Default
     }
 }
 
-impl<D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, D::Y>> LearnerMut<D,  Ensemble<D::X, D::Y, P>> for EnsembleBuilder<D, B, P>
+impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> LearnerMut<D,  Ensemble<D::X, Z, P>> for EnsembleBuilder<Z, D, B, P>
 {
-    fn fit(&self, data: &mut D) -> Ensemble<D::X, D::Y, P> {
+    fn fit(&self, data: &mut D) -> Ensemble<D::X, Z, P> {
         let mut estimators = Vec::with_capacity(self.n_estimators);
 
         for _ in 0..self.n_estimators {

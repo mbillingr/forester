@@ -173,3 +173,8 @@ pub trait Predictor<X, Y> {
 pub trait ProbabilisticPredictor<S> {
     fn prob(&self, s: &S) -> Real;
 }
+
+pub trait CategoricalProbability<T> {
+    const N: usize;
+    fn prob(&self);
+}

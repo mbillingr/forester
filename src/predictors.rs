@@ -122,6 +122,81 @@ impl<S: Sample<Y=Real>> ProbabilisticLeafPredictor for ConstGaussian<S>
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct CategoricalProbabilities {
+    counts: Vec<usize>,
+    total: usize,
+}
+
+impl CategoricalProbabilities {
+    pub fn new() -> Self {
+        CategoricalProbabilities {
+            counts: Vec::new(),
+            total: 0,
+        }
+    }
+
+    pub fn add_one(&mut self, c: u8) {
+        let c = c as usize;
+        if c >= self.counts.len() {
+            self.counts.resize(c + 1, 0);
+        }
+        self.counts[c] += 1;
+        self.total += 1;
+    }
+
+    pub fn add(&mut self, other: &Self) {
+        if other.counts.len() > self.counts.len() {
+            self.counts.resize(other.counts.len(), 0);
+        }
+
+        for (a, b) in self.counts.iter_mut().zip(other.counts.iter()) {
+            *a += *b;
+            self.total += *b;
+        }
+    }
+
+    pub fn probs(&self) -> Vec<Real> {
+        self.counts.iter().map(|&c| c as Real / self.total as Real).collect()
+    }
+
+    pub fn prob(&self, c: u8) -> Real {
+        self.counts[c as usize] as Real / self.total as Real
+    }
+}
+
+#[derive(Debug)]
+pub struct ClassPredictor<S: ?Sized> {
+    counts: CategoricalProbabilities,
+    _p: PhantomData<S>,
+}
+
+impl<S: Sample<Y=u8>> LeafPredictor for ClassPredictor<S>
+{
+
+    type Output = CategoricalProbabilities;
+    type S = S;
+    type D = [S];
+
+    fn predict(&self, _x: &<Self::S as Sample>::X) -> Self::Output {
+        self.counts.clone()
+    }
+
+    fn fit(data: &Self::D) -> Self {
+        let mut counts = CategoricalProbabilities::new();
+
+        for sample in data {
+            let yi = sample.get_y();
+            counts.add_one(yi);
+        }
+
+        ClassPredictor {
+            counts,
+            _p: PhantomData,
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

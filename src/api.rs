@@ -7,14 +7,14 @@ use datasets::TupleSample;
 use ensemble::{Ensemble, EnsembleBuilder};
 use features::ColumnSelect;
 use get_item::GetItem;
-use predictors::ConstMean;
+use predictors::{CategoricalProbabilities, ClassPredictor, ConstMean};
 use splitters::{BestRandomSplit, ThresholdSplitter};
 
 
 pub mod extra_trees_regressor {
     use super::*;
 
-    pub type Builder<X, Y> = EnsembleBuilder<Data<X, Y>, TreeBuilder<X, Y>, Tree<X, Y>>;
+    pub type Builder<X, Y> = EnsembleBuilder<Y, Data<X, Y>, TreeBuilder<X, Y>, Tree<X, Y>>;
 
     pub type Model<X, Y> = Ensemble<X, Y, Tree<X, Y>>;
 
@@ -30,7 +30,29 @@ pub mod extra_trees_regressor {
     type Predictor<X, Y> =  ConstMean<Sample<X, Y>>;
     type Features = ColumnSelect;
     type SplitCriterion<X, Y> = VarCriterion<Sample<X, Y>>;
+}
 
+
+pub mod extra_trees_classifier {
+    use super::*;
+
+    pub type Builder<X> = EnsembleBuilder<CategoricalProbabilities, Data<X>, TreeBuilder<X>, Tree<X>>;
+
+    pub type Model<X> = Ensemble<X, CategoricalProbabilities, Tree<X>>;
+
+    pub type TreeBuilder<X> = DeterministicTreeBuilder<SplitFitter<X>, Predictor<X>>;
+
+    pub type Tree<X> = DeterministicTree<Splitter<X>, Predictor<X>>;
+
+    pub type Data<X> = [Sample<X>];
+    pub type Sample<X> = TupleSample<Features, X, Y>;
+    pub type Y = u8;
+
+    type SplitFitter<X> = BestRandomSplit<Splitter<X>, SplitCriterion<X>, ThreadRng>;
+    type Splitter<X> = ThresholdSplitter<Data<X>>;
+    type Predictor<X> =  ClassPredictor<Sample<X>>;
+    type Features = ColumnSelect;
+    type SplitCriterion<X> = VarCriterion<Sample<X>>;
 }
 
 
@@ -61,5 +83,35 @@ mod tests {
         let p = model.predict(&[5]);
         assert!(p >= 2.0);
         assert!(p <= 5.0);
+    }
+
+    #[test]
+    fn extra_trees_classifier() {
+        use super::extra_trees_classifier::*;
+        use super::extra_trees_classifier::Builder;
+        use super::extra_trees_classifier::Sample;
+        use LearnerMut;
+        use Predictor as PT;
+        use Sample as SampleTrait;
+        use get_item::GetItem;
+
+        let x = vec![[1], [2], [3],    [7], [8], [9]];
+        let y = vec![ 1,   1,   1,      2,   2,   2];
+
+        let mut data: Vec<Sample<[i32;1]>> = x.into_iter().zip(y.into_iter()).map(|(x, y)| Sample::new(x, y)).collect();
+
+        let model = Builder::default().fit(&mut data);
+        let tree = TreeBuilder::default().fit(&mut data);
+
+        assert_eq!(model.predict(&[-1000]).prob(1), 1.0);
+        assert_eq!(model.predict(&[1000]).prob(2), 1.0);
+
+        println!("{:?}", model.predict(&[5]));
+
+
+        let p = model.predict(&[5]);
+        assert_eq!(p.prob(0), 0.0);
+        assert!(p.prob(1) > 0.0);
+        assert!(p.prob(2) > 0.0);
     }
 }
