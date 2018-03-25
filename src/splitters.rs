@@ -1,9 +1,10 @@
+use std::cell::RefCell;
 use std::fmt;
 use std::marker::PhantomData;
 
 use rand::distributions::{IndependentSample, Range};
 use rand::distributions::range::SampleRange;
-use rand::{thread_rng, Rng};
+use rand::{thread_rng, Rng, ThreadRng};
 
 use super::DataSet;
 use super::DeterministicSplitter;
@@ -14,6 +15,8 @@ use super::Side;
 use super::SplitCriterion;
 use super::SplitFitter;
 use super::Splitter;
+
+use random::DefaultRng;
 
 /// Use a simple threshold for deterministic split.
 pub struct ThresholdSplitter<D>
@@ -58,7 +61,7 @@ impl<D> RandomSplit<ThresholdSplitter<D>> for ThresholdSplitter<D>
     where D: ?Sized + DataSet,
           D::F: SampleRange
 {
-    fn new_random(data: &D) -> ThresholdSplitter<D> {
+    fn new_random<R: Rng>(data: &D, rng: &mut R) -> ThresholdSplitter<D> {
         let theta = data.random_feature();
 
         let minmax = data.reduce_feature(&theta, None, |minmax, f|{
@@ -73,7 +76,7 @@ impl<D> RandomSplit<ThresholdSplitter<D>> for ThresholdSplitter<D>
         });
         let (min, max) = minmax.expect("Unable to determine feature range");
 
-        let threshold = thread_rng().gen_range(min, max);
+        let threshold = rng.gen_range(min, max);
 
         ThresholdSplitter {
             theta,
@@ -96,30 +99,33 @@ impl<D> DeterministicSplitter for ThresholdSplitter<D>
     }
 }
 
-pub struct BestRandomSplit<S, C> {
+pub struct BestRandomSplit<S, C, R: Rng> {
     n_splits: usize,
+    rng: RefCell<R>,
     _p: PhantomData<(S, C)>,
 }
 
-impl<S, C> BestRandomSplit<S, C> {
-    pub fn new(n_splits: usize) -> Self {
+impl<S, C, R: DefaultRng> BestRandomSplit<S, C, R> {
+    pub fn new(n_splits: usize, rng: R) -> Self {
         BestRandomSplit {
             n_splits,
+            rng: RefCell::new(rng),
             _p: PhantomData,
         }
     }
 }
 
-impl<S, C> Default for BestRandomSplit<S, C> {
+impl<S, C, R: DefaultRng> Default for BestRandomSplit<S, C, R> {
     fn default() -> Self {
         BestRandomSplit {
             n_splits: 10,
+            rng: RefCell::new(R::default_rng()),
             _p: PhantomData,
         }
     }
 }
 
-impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>> SplitFitter for BestRandomSplit<S, C> {
+impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>, R: DefaultRng> SplitFitter for BestRandomSplit<S, C, R> {
     type D = S::D;
     type Split = S;
     type Criterion = C;
@@ -127,10 +133,12 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>> Split
         let mut best_criterion = None;
         let mut best_split = None;
 
+        let mut rng = self.rng.borrow_mut();
+
         let parent_criterion = C::calc_presplit(data);
 
         for _ in 0..self.n_splits {
-            let split: S = Self::Split::new_random(data);
+            let split: S = Self::Split::new_random(data, &mut *rng);
 
             let i = data.partition_by_split(&split);
 
@@ -179,8 +187,9 @@ mod tests {
             TupleSample::new([7], 12.0),
         ];
 
-        let brs: BestRandomSplit<ThresholdSplitter<[Sample]>, VarCriterion<_>> = BestRandomSplit {
+        let brs: BestRandomSplit<ThresholdSplitter<[Sample]>, VarCriterion<_>, _> = BestRandomSplit {
             n_splits: 100,  // Make *almost* sure that we will find the optimal split
+            rng: RefCell::new(thread_rng()),
             _p: PhantomData
         };
 

@@ -3,6 +3,8 @@ extern crate rand;
 use std::cmp;
 use std::f64;
 
+use rand::Rng;
+
 pub mod api;
 pub mod array_ops;
 pub mod criteria;
@@ -11,6 +13,7 @@ pub mod features;
 pub mod ensemble;
 pub mod get_item;
 pub mod predictors;
+pub mod random;
 pub mod splitters;
 pub mod d_tree;
 //pub mod vec2d;
@@ -154,7 +157,7 @@ pub trait ProbabilisticSplitter: Splitter {
 
 /// Trait that allows a Splitter to generate random splits
 pub trait RandomSplit<S: Splitter> {
-    fn new_random(data: &S::D) -> S;
+    fn new_random<R: Rng>(data: &S::D, rng: &mut R) -> S;
 }
 
 /// Find split

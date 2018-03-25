@@ -138,6 +138,9 @@ impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Learne
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use rand::thread_rng;
+
     use criteria::VarCriterion;
     use datasets::TupleSample;
     use features::ColumnSelect;
@@ -184,8 +187,8 @@ mod tests {
             TupleSample::new([11], 5.0),
         ];
 
-        let tb: DeterministicTreeBuilder<BestRandomSplit<ThresholdSplitter<_>, VarCriterion<_>>, ConstMean<Sample>> = DeterministicTreeBuilder {
-            split_finder: BestRandomSplit::new(1),
+        let tb: DeterministicTreeBuilder<BestRandomSplit<ThresholdSplitter<_>, VarCriterion<_>, _>, ConstMean<Sample>> = DeterministicTreeBuilder {
+            split_finder: BestRandomSplit::new(1, thread_rng()),
             min_samples_split: 2,
             _p: PhantomData,
         };

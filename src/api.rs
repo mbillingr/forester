@@ -1,4 +1,6 @@
 
+use rand::ThreadRng;
+
 use criteria::VarCriterion;
 use d_tree::{DeterministicTree, DeterministicTreeBuilder};
 use datasets::TupleSample;
@@ -23,7 +25,7 @@ pub mod ExtraTreesRegressor {
     pub type Data<X, Y> = [Sample<X, Y>];
     pub type Sample<X, Y> = TupleSample<Features, X, Y>;
 
-    type SplitFitter<X, Y> = BestRandomSplit<Splitter<X, Y>, SplitCriterion<X, Y>>;
+    type SplitFitter<X, Y> = BestRandomSplit<Splitter<X, Y>, SplitCriterion<X, Y>, ThreadRng>;
     type Splitter<X, Y> = ThresholdSplitter<Data<X, Y>>;
     type Predictor<X, Y> =  ConstMean<Sample<X, Y>>;
     type Features = ColumnSelect;
