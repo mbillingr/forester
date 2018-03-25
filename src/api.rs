@@ -11,7 +11,7 @@ use predictors::ConstMean;
 use splitters::{BestRandomSplit, ThresholdSplitter};
 
 
-pub mod ExtraTreesRegressor {
+pub mod extra_trees_regressor {
     use super::*;
 
     pub type Builder<X, Y> = EnsembleBuilder<Data<X, Y>, TreeBuilder<X, Y>, Tree<X, Y>>;
@@ -39,9 +39,9 @@ mod tests {
 
     #[test]
     fn extra_trees_regressor() {
-        use super::ExtraTreesRegressor::*;
-        use super::ExtraTreesRegressor::Builder;
-        use super::ExtraTreesRegressor::Sample;
+        use super::extra_trees_regressor::*;
+        use super::extra_trees_regressor::Builder;
+        use super::extra_trees_regressor::Sample;
         use LearnerMut;
         use Predictor as PT;
         use Sample as SampleTrait;

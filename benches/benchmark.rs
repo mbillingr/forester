@@ -9,7 +9,7 @@ use criterion::Criterion;
 
 use rand::{thread_rng, Rng};
 
-use forest::api::ExtraTreesRegressor::*;
+use forest::api::extra_trees_regressor::*;
 use forest::LearnerMut;
 
 const N: usize = 100;
