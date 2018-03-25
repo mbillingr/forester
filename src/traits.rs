@@ -142,7 +142,7 @@ pub trait ProbabilisticSplitter: Splitter {
 
 /// Trait that allows a Splitter to generate random splits
 pub trait RandomSplit<S: Splitter> {
-    fn new_random<R: Rng>(data: &S::D, rng: &mut R) -> S;
+    fn new_random<R: Rng>(data: &S::D, rng: &mut R) -> Option<S>;
 }
 
 /// Find split

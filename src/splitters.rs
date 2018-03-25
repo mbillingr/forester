@@ -61,7 +61,7 @@ impl<D> RandomSplit<ThresholdSplitter<D>> for ThresholdSplitter<D>
     where D: ?Sized + DataSet,
           D::F: SampleRange
 {
-    fn new_random<R: Rng>(data: &D, rng: &mut R) -> ThresholdSplitter<D> {
+    fn new_random<R: Rng>(data: &D, rng: &mut R) -> Option<ThresholdSplitter<D>> {
         let theta = data.random_feature(rng);
 
         let minmax = data.reduce_feature(&theta, None, |minmax, f|{
@@ -76,12 +76,16 @@ impl<D> RandomSplit<ThresholdSplitter<D>> for ThresholdSplitter<D>
         });
         let (min, max) = minmax.expect("Unable to determine feature range");
 
+        if min >= max {
+            return None
+        }
+
         let threshold = rng.gen_range(min, max);
 
-        ThresholdSplitter {
+        Some(ThresholdSplitter {
             theta,
             threshold,
-        }
+        })
     }
 }
 
@@ -138,7 +142,10 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>, R: De
         let parent_criterion = C::calc_presplit(data);
 
         for _ in 0..self.n_splits {
-            let split: S = Self::Split::new_random(data, &mut *rng);
+            let split: S = match Self::Split::new_random(data, &mut *rng) {
+                Some(s) => s,
+                None => continue
+            };
 
             let i = data.partition_by_split(&split);
 
@@ -196,5 +203,30 @@ mod tests {
         let split = brs.find_split(data).expect("No split found");
         assert_eq!(split.theta, 0);
         assert_eq!(split.threshold, 3);
+    }
+
+    #[test]
+    fn best_random_constfeature() {
+        type Sample = TupleSample<ColumnSelect, [f32;1], f64>;
+
+        let data: &mut [Sample] = &mut [
+            TupleSample::new([42.0], 1.0),
+            TupleSample::new([42.0], 2.0),
+            TupleSample::new([42.0], 1.0),
+            TupleSample::new([42.0], 2.0),
+            TupleSample::new([42.0], 11.0),
+            TupleSample::new([42.0], 12.0),
+            TupleSample::new([42.0], 11.0),
+            TupleSample::new([42.0], 12.0),
+        ];
+
+        let brs: BestRandomSplit<ThresholdSplitter<[Sample]>, VarCriterion<_>, _> = BestRandomSplit {
+            n_splits: 100,  // Make *almost* sure that we will find the optimal split
+            rng: RefCell::new(thread_rng()),
+            _p: PhantomData
+        };
+
+        let split = brs.find_split(data);
+        assert_eq!(split.is_none(), true);
     }
 }
