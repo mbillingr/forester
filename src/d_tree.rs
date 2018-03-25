@@ -1,4 +1,3 @@
-use std::fmt;
 use std::marker::PhantomData;
 
 use super::DataSet;
@@ -6,7 +5,6 @@ use super::DeterministicSplitter;
 use super::LeafPredictor;
 use super::LearnerMut;
 use super::Predictor;
-use super::ProbabilisticSplitter;
 use super::Sample;
 use super::Side;
 use super::SplitFitter;
@@ -80,7 +78,7 @@ pub struct DeterministicTreeBuilder<S: SplitFitter, P: LeafPredictor<S=<S::D as 
 }
 
 impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> DeterministicTreeBuilder<S, P> {
-    fn new(split_finder: S, min_samples_split: usize) -> DeterministicTreeBuilder<S, P> {
+    pub fn new(split_finder: S, min_samples_split: usize) -> DeterministicTreeBuilder<S, P> {
         DeterministicTreeBuilder {
             split_finder,
             min_samples_split,
@@ -170,7 +168,6 @@ mod tests {
     #[test]
     fn fit() {
         type Sample = TupleSample<ColumnSelect, [i32;1], f64>;
-        type Data = [Sample];
 
         let mut data: Vec<Sample> = vec![
             TupleSample::new([0], 1.0),

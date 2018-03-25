@@ -2,15 +2,13 @@ use std::cell::RefCell;
 use std::fmt;
 use std::marker::PhantomData;
 
-use rand::distributions::{IndependentSample, Range};
 use rand::distributions::range::SampleRange;
-use rand::{thread_rng, Rng, ThreadRng};
+use rand::Rng;
 
 use super::DataSet;
 use super::DeterministicSplitter;
 use super::Feature;
 use super::RandomSplit;
-use super::Sample;
 use super::Side;
 use super::SplitCriterion;
 use super::SplitFitter;
@@ -154,7 +152,7 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>, R: De
             let new_criterion = C::calc_postsplit(left, right);
 
             let swap = match best_criterion {
-                None => true,
+                None => new_criterion <= parent_criterion,
                 Some(c) => new_criterion < c,
             };
 
@@ -173,11 +171,13 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>, R: De
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use rand::thread_rng;
+
     use super::super::SplitFitter;
     use criteria::VarCriterion;
     use datasets::TupleSample;
     use features::ColumnSelect;
-    use predictors::ConstMean;
 
     #[test]
     fn best_random() {

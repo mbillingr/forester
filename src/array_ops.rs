@@ -1,5 +1,4 @@
 use std::iter;
-use std::marker::PhantomData;
 use std::ops;
 
 use predictors::CategoricalProbabilities;

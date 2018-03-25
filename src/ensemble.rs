@@ -1,18 +1,10 @@
-use std::iter;
 use std::marker::PhantomData;
-use std::ops;
 
 use super::DataSet;
-use super::DeterministicSplitter;
 use super::LearnerMut;
-use super::LeafPredictor;
 use super::Predictor;
-use super::Sample;
-use super::Splitter;
-use super::SplitFitter;
 
 use array_ops::IterMean;
-use d_tree::{DeterministicTree, DeterministicTreeBuilder};
 
 /// Generic decision forest.
 #[derive(Debug)]
@@ -39,7 +31,7 @@ pub struct EnsembleBuilder<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predi
 }
 
 impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> EnsembleBuilder<Z, D, B, P> {
-    fn new(n_estimators: usize, estimator_builder: B) -> EnsembleBuilder<Z, D, B, P> {
+    pub fn new(n_estimators: usize, estimator_builder: B) -> EnsembleBuilder<Z, D, B, P> {
         EnsembleBuilder {
             n_estimators,
             estimator_builder,

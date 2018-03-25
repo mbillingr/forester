@@ -1,6 +1,6 @@
 use std::cmp;
 
-use rand::{thread_rng, Rand, Rng};
+use rand::Rng;
 //use rand::distributions::{IndependentSample, Range};
 
 use super::Feature;
@@ -23,7 +23,7 @@ where X: GetItem,
     }
 
     fn random<R: Rng>(x: &X, rng: &mut R) -> Self::Theta {
-        thread_rng().gen_range(0, x.n_items())
+        rng.gen_range(0, x.n_items())
     }
 }
 
