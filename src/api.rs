@@ -1,7 +1,7 @@
 
 use rand::ThreadRng;
 
-use criteria::VarCriterion;
+use criteria::{GiniCriterion, VarCriterion};
 use d_tree::{DeterministicTree, DeterministicTreeBuilder};
 use datasets::TupleSample;
 use ensemble::{Ensemble, EnsembleBuilder};
@@ -51,7 +51,7 @@ pub mod extra_trees_classifier {
     type Splitter<X> = ThresholdSplitter<Data<X>>;
     type Predictor<X> =  ClassPredictor<Sample<X>>;
     type Features = ColumnSelect;
-    type SplitCriterion<X> = VarCriterion<Sample<X>>;
+    type SplitCriterion<X> = GiniCriterion<Sample<X>>;
 }
 
 

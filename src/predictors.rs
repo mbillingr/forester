@@ -160,6 +160,12 @@ impl CategoricalProbabilities {
         self.counts.iter().map(|&c| c as Real / self.total as Real).collect()
     }
 
+    pub fn apply<F: FnMut(Real)>(&self, mut f: F) {
+        for &c in &self.counts {
+            f(c as Real / self.total as Real);
+        }
+    }
+
     pub fn prob(&self, c: u8) -> Real {
         self.counts[c as usize] as Real / self.total as Real
     }
