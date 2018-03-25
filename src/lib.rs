@@ -43,7 +43,7 @@ pub trait Feature<X> {
     type Theta;
     type F: cmp::PartialOrd + Clone;
     fn get_feature(x: &X, theta: &Self::Theta) -> Self::F;
-    fn random(x: &X) -> Self::Theta;
+    fn random<R: Rng>(x: &X, rng: &mut R) -> Self::Theta;
 }
 
 pub trait Sample {
@@ -69,7 +69,7 @@ pub trait DataSet {
 
     fn subsets(&mut self, i: usize) -> (&mut Self, &mut Self);
 
-    fn random_feature(&self) -> Self::Theta;
+    fn random_feature<R: Rng>(&self, rng: &mut R) -> Self::Theta;
 
     fn reduce_feature<B, F: FnMut(B, Self::F) -> B>(&self, theta: &Self::Theta, init: B, f: F) -> B;
 }
@@ -97,8 +97,8 @@ where S: Sample,
         self.split_at_mut(i)
     }
 
-    fn random_feature(&self) -> Self::Theta {
-        S::FX::random(&self[0].get_x())
+    fn random_feature<R: Rng>(&self, rng: &mut R) -> Self::Theta {
+        S::FX::random(&self[0].get_x(), rng)
     }
 
     fn reduce_feature<B, F: FnMut(B, Self::F) -> B>(&self, theta: &Self::Theta, init: B, f: F) -> B {

@@ -22,7 +22,7 @@ where X: GetItem,
         x.get_item(*theta).clone()
     }
 
-    fn random(x: &X) -> Self::Theta {
+    fn random<R: Rng>(x: &X, rng: &mut R) -> Self::Theta {
         thread_rng().gen_range(0, x.n_items())
     }
 }
@@ -44,10 +44,10 @@ where X: GetItem,
         a * alpha + b * (1.0 - alpha)
     }
 
-    fn random(x: &X) -> Self::Theta {
-        let a = thread_rng().gen_range(0, x.n_items());
-        let b = thread_rng().gen_range(0, x.n_items());
-        let alpha = thread_rng().gen();
+    fn random<R: Rng>(x: &X, rng: &mut R) -> Self::Theta {
+        let a = rng.gen_range(0, x.n_items());
+        let b = rng.gen_range(0, x.n_items());
+        let alpha = rng.gen();
         debug_assert!(alpha >= 0.0);
         debug_assert!(alpha <= 1.0);
         (a, b, alpha)

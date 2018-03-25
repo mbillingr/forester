@@ -62,7 +62,7 @@ impl<D> RandomSplit<ThresholdSplitter<D>> for ThresholdSplitter<D>
           D::F: SampleRange
 {
     fn new_random<R: Rng>(data: &D, rng: &mut R) -> ThresholdSplitter<D> {
-        let theta = data.random_feature();
+        let theta = data.random_feature(rng);
 
         let minmax = data.reduce_feature(&theta, None, |minmax, f|{
             match minmax {
