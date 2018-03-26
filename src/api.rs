@@ -24,11 +24,11 @@ pub mod extra_trees_regressor {
     pub type Data<X, Y> = [Sample<X, Y>];
     pub type Sample<X, Y> = TupleSample<Features, X, Y>;
 
-    type SplitFitter<X, Y> = BestRandomSplit<Splitter<X, Y>, SplitCriterion<X, Y>, ThreadRng>;
-    type Splitter<X, Y> = ThresholdSplitter<Data<X, Y>>;
-    type Predictor<X, Y> =  ConstMean<Sample<X, Y>>;
-    type Features = ColumnSelect;
-    type SplitCriterion<X, Y> = VarCriterion<Sample<X, Y>>;
+    pub type SplitFitter<X, Y> = BestRandomSplit<Splitter<X, Y>, SplitCriterion<X, Y>, ThreadRng>;
+    pub type Splitter<X, Y> = ThresholdSplitter<Data<X, Y>>;
+    pub type Predictor<X, Y> =  ConstMean<Sample<X, Y>>;
+    pub type Features = ColumnSelect;
+    pub type SplitCriterion<X, Y> = VarCriterion<Sample<X, Y>>;
 }
 
 
@@ -47,11 +47,11 @@ pub mod extra_trees_classifier {
     pub type Sample<X> = TupleSample<Features, X, Y>;
     pub type Y = u8;
 
-    type SplitFitter<X> = BestRandomSplit<Splitter<X>, SplitCriterion<X>, ThreadRng>;
-    type Splitter<X> = ThresholdSplitter<Data<X>>;
-    type Predictor<X> =  ClassPredictor<Sample<X>>;
-    type Features = ColumnSelect;
-    type SplitCriterion<X> = GiniCriterion<Sample<X>>;
+    pub type SplitFitter<X> = BestRandomSplit<Splitter<X>, SplitCriterion<X>, ThreadRng>;
+    pub type Splitter<X> = ThresholdSplitter<Data<X>>;
+    pub type Predictor<X> =  ClassPredictor<Sample<X>>;
+    pub type Features = ColumnSelect;
+    pub type SplitCriterion<X> = GiniCriterion<Sample<X>>;
 }
 
 

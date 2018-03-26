@@ -8,7 +8,13 @@ rand = "0.4"
 
 [dev-dependencies]
 criterion = "0.2"
+gnuplot = "0.0.24"
 
 [[bench]]
 name = "benchmark"
 harness = false
+
+
+[[example]]
+name = "extra_tree_regressor"
+path = "examples/extra_trees_regressor.rs"
