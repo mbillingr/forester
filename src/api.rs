@@ -1,13 +1,17 @@
+use std::cmp;
 
-use rand::ThreadRng;
+use rand::{thread_rng, ThreadRng};
+use rand::distributions::range::SampleRange;
 
 use criteria::{GiniCriterion, VarCriterion};
 use d_tree::{DeterministicTree, DeterministicTreeBuilder};
 use datasets::TupleSample;
 use ensemble::{Ensemble, EnsembleBuilder};
 use features::ColumnSelect;
+use get_item::GetItem;
 use predictors::{CategoricalProbabilities, ClassPredictor, ConstMean};
 use splitters::{BestRandomSplit, ThresholdSplitter};
+use traits::LearnerMut;
 
 
 pub mod extra_trees_regressor {
@@ -29,6 +33,52 @@ pub mod extra_trees_regressor {
     pub type Predictor<X, Y> =  ConstMean<Sample<X, Y>>;
     pub type Features = ColumnSelect;
     pub type SplitCriterion<X, Y> = VarCriterion<Sample<X, Y>>;
+
+    pub struct ExtraTreesRegressor {
+        n_estimators: usize,
+        n_splits: usize,
+        min_samples_split: usize,
+    }
+
+    impl ExtraTreesRegressor {
+        pub fn new() -> ExtraTreesRegressor {
+            ExtraTreesRegressor {
+                n_estimators: 10,
+                n_splits: 1,
+                min_samples_split: 1,
+            }
+        }
+
+        pub fn n_estimators(mut self, n: usize) -> Self {
+            self.n_estimators = n;
+            self
+        }
+
+        pub fn n_splits(mut self, n: usize) -> Self {
+            self.n_splits = n;
+            self
+        }
+
+        pub fn min_samples_split(mut self, n: usize) -> Self {
+            self.min_samples_split = n;
+            self
+        }
+
+        pub fn fit<X>(self, data: &mut Data<X, f64>) -> Model<X, f64>
+            where X: Clone + GetItem,
+                  X::Item: Clone + cmp::PartialOrd + SampleRange,
+        {
+            Builder::new(
+                self.n_estimators,
+                TreeBuilder::new(
+                    SplitFitter::new(
+                        self.n_splits,
+                        thread_rng()),
+                    self.min_samples_split,
+                )
+            ).fit(data)
+        }
+    }
 }
 
 
