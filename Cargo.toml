@@ -2,11 +2,16 @@
 name = "forest"
 version = "0.0.1"
 authors = ["Martin Billinger <flkazemakase@gmail.com>"]
+publish = false  # prevent publication by mistake
+
+[profile.release]
+debug = true  # TODO: remove this when publishing
 
 [dependencies]
 rand = "0.4"
 
 [dev-dependencies]
+cpuprofiler = "0.0.3"
 criterion = "0.2"
 gnuplot = "0.0.24"
 
@@ -18,3 +23,7 @@ harness = false
 [[example]]
 name = "extra_tree_regressor"
 path = "examples/extra_trees_regressor.rs"
+
+[[example]]
+name = "profile1"
+path = "examples/profile1.rs"
