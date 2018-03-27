@@ -9,6 +9,7 @@ use super::DataSet;
 use super::DeterministicSplitter;
 use super::Feature;
 use super::RandomSplit;
+use super::Sample;
 use super::Side;
 use super::SplitCriterion;
 use super::SplitFitter;
@@ -62,17 +63,14 @@ impl<D> RandomSplit<ThresholdSplitter<D>> for ThresholdSplitter<D>
     fn new_random<R: Rng>(data: &D, rng: &mut R) -> Option<ThresholdSplitter<D>> {
         let theta = data.random_feature(rng);
 
-        let minmax = data.reduce_feature(&theta, None, |minmax, f|{
-            match minmax {
-                None => Some((f.clone(), f)),
-                Some((mut min, mut max)) => {
-                    if f < min { min = f.clone(); }
-                    if f > max { max = f; }
-                    Some((min, max))
-                }
-            }
-        });
-        let (min, max) = minmax.expect("Unable to determine feature range");
+        let f = D::FX::get_feature(&data.get(0).get_x(), &theta);
+
+        let (min, max) = data.reduce_feature(&theta, (f.clone(), f),
+                                             |minmax, f| (
+                                                 if f < minmax.0 { f.clone() } else { minmax.0 },
+                                                 if f > minmax.1 { f } else { minmax.1 }
+                                             )
+        );
 
         if min >= max {
             return None

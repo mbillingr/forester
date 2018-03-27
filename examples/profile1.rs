@@ -32,8 +32,8 @@ fn main() {
     let mut data: Vec<_> = x0.iter().zip(y0.iter()).map(|(&x, &y)| Sample::new([x], y)).collect();
 
     let fb = ExtraTreesRegressor::new()
-        .n_estimators(1000)
-        .n_splits(1000)
+        .n_estimators(100)
+        .n_splits(100)
         .min_samples_split(2);
 
     PROFILER.lock().unwrap().start("fit.profile").unwrap();

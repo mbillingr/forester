@@ -50,6 +50,8 @@ pub trait DataSet {
     type Item: Sample<Theta=Self::Theta, F=Self::F, FX=Self::FX, X=Self::X, Y=Self::Y>;
 
     fn n_samples(&self) -> usize;
+    fn get(&self, i: usize) -> &Self::Item;
+
     fn partition_by_split<S: DeterministicSplitter<D=Self>>(&mut self, s: &S) -> usize;
 
     fn subsets(&mut self, i: usize) -> (&mut Self, &mut Self);
@@ -72,6 +74,10 @@ impl<S> DataSet for [S]
 
     fn n_samples(&self) -> usize {
         self.len()
+    }
+
+    fn get(&self, i: usize) -> &Self::Item {
+        &self[i]
     }
 
     fn partition_by_split<SP: DeterministicSplitter<D=Self>>(&mut self, split: &SP) -> usize {
