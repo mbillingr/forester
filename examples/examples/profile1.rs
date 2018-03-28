@@ -1,5 +1,5 @@
 extern crate cpuprofiler;
-extern crate forest;
+extern crate forester;
 extern crate rand;
 
 use std::f64::consts::PI;
@@ -8,8 +8,8 @@ use cpuprofiler::PROFILER;
 
 use rand::{thread_rng, Rng};
 
-use forest::traits::Predictor;
-use forest::api::extra_trees_regressor::{ExtraTreesRegressor, Sample};
+use forester::traits::Predictor;
+use forester::api::extra_trees_regressor::{ExtraTreesRegressor, Sample};
 
 fn func(x: &f64) -> f64 {
     (x * 2.0 * PI).sin() + thread_rng().gen::<f64>() * 0.2

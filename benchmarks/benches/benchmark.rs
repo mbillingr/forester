@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate criterion;
 extern crate rand;
-extern crate forest;
+extern crate forester;
 
 use std::f64;
 
@@ -9,8 +9,8 @@ use criterion::Criterion;
 
 use rand::{thread_rng, Rng};
 
-use forest::api::extra_trees_regressor::*;
-use forest::LearnerMut;
+use forester::api::extra_trees_regressor::*;
+use forester::LearnerMut;
 
 const N: usize = 100;
 const M: usize = 30;

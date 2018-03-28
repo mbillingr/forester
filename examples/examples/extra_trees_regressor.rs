@@ -1,4 +1,4 @@
-extern crate forest;
+extern crate forester;
 extern crate gnuplot;
 extern crate rand;
 
@@ -8,8 +8,8 @@ use gnuplot::*;
 
 use rand::{thread_rng, Rng};
 
-use forest::traits::Predictor;
-use forest::api::extra_trees_regressor::{ExtraTreesRegressor, Sample};
+use forester::traits::Predictor;
+use forester::api::extra_trees_regressor::{ExtraTreesRegressor, Sample};
 
 /// function used to generate training data
 fn func(x: &f64) -> f64 {
