@@ -18,7 +18,17 @@ type Real = f64;
 
 pub use traits::*;
 
+pub fn dummy1() {
+  println!("The purpose of this function is to be not covered in any tests, and therefore to show up in the coverage report.");
+}
+
 
 #[cfg(test)]
 mod tests {
+
+  pub fn dummy2() {
+    println!("Same here...");
+    println!("The purpose of this function is to be not covered in any tests, and therefore to show up in the coverage report.");
+  }
+  
 }
