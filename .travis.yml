@@ -3,6 +3,12 @@ language: rust
 rust:
   - stable
 
+script:
+  - cargo build -p forester
+  - cargo test -p forester
+  - cargo build -p forester --release
+  - cargo test -p forester --release
+
 cache: cargo
 
 # Taken from Trust
