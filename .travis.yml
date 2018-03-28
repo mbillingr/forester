@@ -1,5 +1,7 @@
 language: rust
 
+sudo: required  # workaround to allow code coverage (see https://github.com/travis-ci/travis-ci/issues/9061)
+
 rust:
   - stable
 
