@@ -1,0 +1,20 @@
+[package]
+name = "forester-examples"
+version = "0.0.1"
+authors = ["Martin Billinger <flkazemakase@gmail.com>"]
+publish = false  # prevent publication by mistake
+
+[dependencies]
+forester = { path = "../forester" }
+cpuprofiler = "0.0.3"
+gnuplot = "0.0.24"
+rand = "0.4"
+
+
+[[example]]
+name = "extra_trees_regressor"
+path = "examples/extra_trees_regressor.rs"
+
+[[example]]
+name = "profile1"
+path = "examples/profile1.rs"

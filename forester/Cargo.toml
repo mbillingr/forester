@@ -1,0 +1,8 @@
+[package]
+name = "forester"
+version = "0.0.1"
+authors = ["Martin Billinger <flkazemakase@gmail.com>"]
+publish = false  # prevent publication by mistake
+
+[dependencies]
+rand = "0.4"
