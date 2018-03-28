@@ -1,5 +1,27 @@
-[workspace]
-members = ["forester", "benchmarks", "examples"]
+[package]
+name = "forester"
+version = "0.0.1"
+authors = ["Martin Billinger <flkazemakase@gmail.com>"]
+publish = false  # prevent publication by mistake
 
-[profile.release]
-debug = true
+[dependencies]
+rand = "0.4"
+
+[dev-dependencies]
+cpuprofiler = "0.0.3"
+criterion = "0.2"
+gnuplot = "0.0.24"
+
+
+[[bench]]
+name = "benchmark"
+harness = false
+
+
+[[example]]
+name = "extra_trees_regressor"
+path = "examples/extra_trees_regressor.rs"
+
+[[example]]
+name = "profile1"
+path = "examples/profile1.rs"
