@@ -4,11 +4,14 @@ version = "0.0.1"
 authors = ["Martin Billinger <flkazemakase@gmail.com>"]
 publish = false  # prevent publication by mistake
 
+[features]
+profiling = ["cpuprofiler"]
+
 [dependencies]
+cpuprofiler = { version = "0.0.3", optional = true }  # this is a dev-dependency, but those can't be optional
 rand = "0.4"
 
 [dev-dependencies]
-cpuprofiler = "0.0.3"
 criterion = "0.2"
 gnuplot = "0.0.24"
 
