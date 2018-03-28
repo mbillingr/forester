@@ -118,8 +118,8 @@ build: false
 #directly or perform other testing commands. Rust will automatically be placed in the PATH
 # environment variable.
 test_script:
-  - cargo test -p forester %cargoflags%
-  - cargo test -p forester --release %cargoflags%
+  - cargo test %cargoflags%
+  - cargo test --release %cargoflags%
 
 cache:
   - C:\Users\appveyor\.cargo\registry

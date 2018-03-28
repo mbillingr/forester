@@ -6,10 +6,10 @@ rust:
   - stable
 
 script:
-  - cargo build -p forester
-  - cargo test -p forester
-  - cargo build -p forester --release
-  - cargo test -p forester --release
+  - cargo build
+  - cargo test
+  - cargo build --release
+  - cargo test --release
 
 cache: cargo
 
