@@ -1,4 +1,11 @@
 language: rust
+
 rust:
   - stable
 
+cache: cargo
+
+# Taken from Trust
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
