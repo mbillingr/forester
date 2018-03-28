@@ -59,14 +59,14 @@ deploy:
   auth_token:
     secure: jmBOTfHAUEExT8tQxJWtMf1VKwPGfqxzJh5mwefunLt88u1BKBIHKTW78UB/QnSY
   description: ''
-  on:
+  on: false
+    # Note the "false" above :)
     # TODO Here you can pick which targets will generate binary releases
     # In this example, there are some targets that are tested using the stable
     # and nightly channels. This condition makes sure there is only one release
     # for such targets and that's generated using the stable channel
     #RUST_VERSION: stable
     #appveyor_repo_tag: true
-    false
   provider: GitHub
 
 cache:
