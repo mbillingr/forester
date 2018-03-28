@@ -120,3 +120,7 @@ build: false
 test_script:
   - cargo test -p forester %cargoflags%
   - cargo test -p forester --release %cargoflags%
+
+cache:
+  - C:\Users\appveyor\.cargo\registry
+  - target
