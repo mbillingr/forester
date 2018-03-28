@@ -5,6 +5,11 @@ use std::slice;
 use super::FixedLength;
 use super::Shape2D;
 
+pub fn untested(x: i32) -> i32 {
+    println!("Another function without coverage...");
+    return x * x + 42;
+}
+
 #[derive(Debug)]
 pub struct Vec2D<T> {
     data: Vec<T>,
