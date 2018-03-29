@@ -11,11 +11,11 @@ use features::ColumnSelect;
 use get_item::GetItem;
 use predictors::{CategoricalProbabilities, ClassPredictor, ConstMean};
 use splitters::{BestRandomSplit, ThresholdSplitter};
-use traits::LearnerMut;
 
 
 pub mod extra_trees_regressor {
     use super::*;
+    use traits::LearnerMut;
 
     pub type Builder<X, Y> = EnsembleBuilder<Y, Data<X, Y>, TreeBuilder<X, Y>, Tree<X, Y>>;
 
@@ -110,19 +110,16 @@ mod tests {
 
     #[test]
     fn extra_trees_regressor() {
-        use super::extra_trees_regressor::*;
-        use super::extra_trees_regressor::Builder;
+        use super::extra_trees_regressor::ExtraTreesRegressor;
         use super::extra_trees_regressor::Sample;
-        use LearnerMut;
-        use Predictor as PT;
+        use Predictor;
 
         let x = vec![[1], [2], [3],    [7], [8], [9]];
         let y = vec![5.0, 5.0, 5.0,    2.0, 2.0, 2.0];
 
-        let mut data: Vec<Sample<[i32;1], f64>> = x.into_iter().zip(y.into_iter()).map(|(x, y)| Sample::new(x, y)).collect();
+        let mut data: Vec<_> = x.into_iter().zip(y.into_iter()).map(|(x, y)| Sample::new(x, y)).collect();
 
-        let model = Builder::default().fit(&mut data);
-        let _tree = TreeBuilder::default().fit(&mut data);
+        let model = ExtraTreesRegressor::new().fit(&mut data);
 
         assert_eq!(model.predict(&[-1000]), 5.0);
         assert_eq!(model.predict(&[1000]), 2.0);
