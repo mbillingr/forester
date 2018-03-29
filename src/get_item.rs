@@ -28,6 +28,14 @@ impl<T> GetItem for Vec<T> {
     fn n_items(&self) -> usize {self.len()}
 }
 
+impl<T> GetItem for [T; 0] {
+    type Item = T;
+    fn get_item(&self, _: usize) -> &T {
+        panic!("Getting item from zero-length array")
+    }
+    fn n_items(&self) -> usize {0}
+}
+
 macro_rules! impl_getitem_for_array {
     ( $( $size:expr ),* ) => {
         $(
