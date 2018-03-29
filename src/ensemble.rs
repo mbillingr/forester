@@ -65,3 +65,41 @@ impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> Learner
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ensemble() {
+        use rand::ThreadRng;
+        use d_tree::DeterministicTreeBuilder;
+        use splitters::BestRandomSplit;
+        use predictors::ConstMean;
+        use splitters::ThresholdSplitter;
+        use criteria::VarCriterion;
+        use datasets::TupleSample;
+        use features::ColumnSelect;
+
+        let x = vec![[1], [2], [3],    [7], [8], [9]];
+        let y = vec![5.0, 5.0, 5.0,    2.0, 2.0, 2.0];
+
+        let mut data: Vec<_> = x
+            .into_iter()
+            .zip(y.into_iter())
+            .map(|(x, y)| TupleSample::<ColumnSelect, _, _>::new(x, y))
+            .collect();
+
+        let estimator_builder: DeterministicTreeBuilder<BestRandomSplit<ThresholdSplitter<_>, VarCriterion<_>, ThreadRng>, ConstMean<_>> = DeterministicTreeBuilder::default();
+        let builder = EnsembleBuilder::new(4, estimator_builder);
+
+        let model = builder.fit(&mut data);
+
+        assert_eq!(model.estimators.len(), 4);
+
+        assert_eq!(model.predict(&[1]), 5.0);
+        assert_eq!(model.predict(&[8]), 2.0);
+    }
+
+}
