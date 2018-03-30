@@ -12,7 +12,7 @@ cpuprofiler = { version = "0.0.3", optional = true }  # this is a dev-dependency
 rand = "0.4"
 
 [dev-dependencies]
-criterion = "0.2"
+criterion = { version = "0.2", default-features = false }
 gnuplot = "0.0.24"
 
 
