@@ -42,11 +42,7 @@ pub mod extra_trees_regressor {
 
     impl ExtraTreesRegressor {
         pub fn new() -> Self {
-            Self {
-                n_estimators: 10,
-                n_splits: 1,
-                min_samples_split: 2,
-            }
+            Self::default()
         }
 
         pub fn n_estimators(mut self, n: usize) -> Self {
@@ -67,7 +63,11 @@ pub mod extra_trees_regressor {
 
     impl Default for ExtraTreesRegressor {
         fn default() -> Self {
-            Self::new()
+            Self {
+                n_estimators: 10,
+                n_splits: 1,
+                min_samples_split: 2,
+            }
         }
     }
 
@@ -121,11 +121,7 @@ pub mod extra_trees_classifier {
 
     impl ExtraTreesClassifier {
         pub fn new() -> Self {
-            Self {
-                n_estimators: 10,
-                n_splits: 1,
-                min_samples_split: 2,
-            }
+            Self::default()
         }
 
         pub fn n_estimators(mut self, n: usize) -> Self {
@@ -146,7 +142,11 @@ pub mod extra_trees_classifier {
 
     impl Default for ExtraTreesClassifier {
         fn default() -> Self {
-            Self::new()
+            Self {
+                n_estimators: 10,
+                n_splits: 1,
+                min_samples_split: 2,
+            }
         }
     }
 
