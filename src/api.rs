@@ -45,7 +45,7 @@ pub mod extra_trees_regressor {
             Self {
                 n_estimators: 10,
                 n_splits: 1,
-                min_samples_split: 1,
+                min_samples_split: 2,
             }
         }
 
@@ -77,8 +77,6 @@ pub mod extra_trees_regressor {
     {
 
         fn fit(&self, data: &mut Data<X, f64>) -> Model<X, f64>
-            where X: Clone + GetItem,
-                  X::Item: Clone + cmp::PartialOrd + SampleRange,
         {
             Builder::new(
                 self.n_estimators,
@@ -126,7 +124,7 @@ pub mod extra_trees_classifier {
             Self {
                 n_estimators: 10,
                 n_splits: 1,
-                min_samples_split: 1,
+                min_samples_split: 2,
             }
         }
 
@@ -144,10 +142,20 @@ pub mod extra_trees_classifier {
             self.min_samples_split = n;
             self
         }
+    }
 
-        pub fn fit<X>(self, data: &mut Data<X>) -> Model<X>
-            where X: Clone + GetItem,
-                  X::Item: Clone + cmp::PartialOrd + SampleRange,
+    impl Default for ExtraTreesClassifier {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    impl<X> LearnerMut<Data<X>, Model<X>> for ExtraTreesClassifier
+        where X: Clone + GetItem,
+              X::Item: Clone + cmp::PartialOrd + SampleRange,
+    {
+
+        fn fit(&self, data: &mut Data<X>) -> Model<X>
         {
             Builder::new(
                 self.n_estimators,
@@ -194,8 +202,7 @@ mod tests {
 
     #[test]
     fn extra_trees_classifier() {
-        use super::extra_trees_classifier::*;
-        use super::extra_trees_classifier::Builder;
+        use super::extra_trees_classifier::ExtraTreesClassifier;
         use super::extra_trees_classifier::Sample;
         use LearnerMut;
         use Predictor as PT;
@@ -205,8 +212,11 @@ mod tests {
 
         let mut data: Vec<Sample<[i32;1]>> = x.into_iter().zip(y.into_iter()).map(|(x, y)| Sample::new(x, y)).collect();
 
-        let model = Builder::default().fit(&mut data);
-        let _tree = TreeBuilder::default().fit(&mut data);
+        let model = ExtraTreesClassifier::new()
+            .n_estimators(100)
+            .n_splits(1)
+            .min_samples_split(2)
+            .fit(&mut data);
 
         assert_eq!(model.predict(&[-1000]).prob(1), 1.0);
         assert_eq!(model.predict(&[1000]).prob(2), 1.0);
