@@ -5,12 +5,13 @@ dist: trusty
 
 rust:
   - stable
-
-script:
-  - cargo build
-  - cargo test
-  - cargo build --release
-  - cargo test --release
+  - beta
+  - nightly
+  
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
 
 cache: cargo
 
