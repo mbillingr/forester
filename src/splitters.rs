@@ -125,7 +125,9 @@ impl<S, C, R: DefaultRng> Default for BestRandomSplit<S, C, R> {
     }
 }
 
-impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>, R: DefaultRng> SplitFitter for BestRandomSplit<S, C, R> {
+// this specialized for float 64 criteria... this is not really necessary, but allows an optimization
+impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D, C=f64>, R: DefaultRng> SplitFitter for BestRandomSplit<S, C, R>
+{
     type D = S::D;
     type Split = S;
     type Criterion = C;
@@ -157,6 +159,13 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D>, R: De
             if swap {
                 best_criterion = Some(new_criterion);
                 best_split = Some(split);
+            }
+
+            // stop early if we find a perfect split
+            if let Some(c) = best_criterion {
+                if c == 0.0 {
+                    break
+                }
             }
         }
 
