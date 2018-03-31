@@ -139,7 +139,7 @@ impl CategoricalProbabilities {
     pub fn add_one(&mut self, c: u8) {
         let c = c as usize;
         if c >= self.counts.len() {
-            self.counts.resize(c + 1, 0);
+            self.counts.resize(c + 1, 0);  // TODO: make number of a-priori counts a regularization parameter
         }
         self.counts[c] += 1;
         self.total += 1;
@@ -167,7 +167,11 @@ impl CategoricalProbabilities {
     }
 
     pub fn prob(&self, c: u8) -> Real {
-        self.counts[c as usize] as Real / self.total as Real
+        if (c as usize) < self.counts.len() {
+            (self.counts[c as usize] as Real) / (self.total as Real)
+        } else {
+            0.0
+        }
     }
 }
 
