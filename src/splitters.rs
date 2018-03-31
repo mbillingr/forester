@@ -149,7 +149,7 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D, C=f64>
 
             let new_criterion = C::calc_postsplit(left, right);
 
-            if new_criterion < best_criterion {
+            if new_criterion <= best_criterion {
                 best_criterion = new_criterion;
                 best_split = Some(split);
             }
