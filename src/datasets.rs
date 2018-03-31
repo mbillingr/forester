@@ -63,7 +63,7 @@ mod tests {
     #[test]
     fn dataset_sort() {
         let s: TupleSample<Mix2, _, _> = TupleSample{data: ([1, 2], 3), _p: PhantomData};
-        assert_eq!(Mix2::get_feature(&s.get_x(), &(0, 1, 0.5)), 1.5);
+        assert_eq!(Mix2::get_feature(&s.get_x(), &(0, 1, 0.5, 0.5)), 1.5);
 
         let data: &mut [TupleSample<ColumnSelect, _, _>] =
             &mut [TupleSample{data: ([0, 3], 1), _p: PhantomData},

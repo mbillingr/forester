@@ -14,6 +14,7 @@ rand = "0.4"
 [dev-dependencies]
 criterion = { version = "0.2", default-features = false }
 gnuplot = "0.0.24"
+image = "*"
 
 
 [[bench]]
@@ -24,6 +25,15 @@ harness = false
 [[example]]
 name = "extra_trees_regressor"
 path = "examples/extra_trees_regressor.rs"
+
+[[example]]
+name = "extra_trees_classifier"
+path = "examples/extra_trees_classifier.rs"
+
+[[example]]
+name = "rotational_classifier"
+path = "examples/rotational_classifier.rs"
+
 
 [[example]]
 name = "profile1"

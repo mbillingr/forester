@@ -132,12 +132,10 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D, C=f64>
     type Split = S;
     type Criterion = C;
     fn find_split(&self, data: &mut Self::D) -> Option<Self::Split> {
-        let mut best_criterion = None;
+        let mut best_criterion = C::calc_presplit(data);
         let mut best_split = None;
 
         let mut rng = self.rng.borrow_mut();
-
-        let parent_criterion = C::calc_presplit(data);
 
         for _ in 0..self.n_splits {
             let split: S = match Self::Split::new_random(data, &mut *rng) {
@@ -151,21 +149,14 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D, C=f64>
 
             let new_criterion = C::calc_postsplit(left, right);
 
-            let swap = match best_criterion {
-                None => new_criterion <= parent_criterion,
-                Some(c) => new_criterion < c,
-            };
-
-            if swap {
-                best_criterion = Some(new_criterion);
+            if new_criterion <= best_criterion {
+                best_criterion = new_criterion;
                 best_split = Some(split);
             }
 
             // stop early if we find a perfect split
-            if let Some(c) = best_criterion {
-                if c == 0.0 {
-                    break
-                }
+            if best_criterion == 0.0 {
+                break
             }
         }
 

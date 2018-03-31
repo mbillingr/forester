@@ -1,4 +1,5 @@
 use std::cmp;
+use std::f64::consts::PI;
 
 use rand::Rng;
 //use rand::distributions::{IndependentSample, Range};
@@ -32,25 +33,32 @@ pub struct Mix2;
 
 impl<X> Feature<X> for Mix2
 where X: GetItem,
-      X::Item: Copy + Into<Real>,
+      X::Item: Clone + Into<Real>,
 {
-    type Theta = (usize, usize, Real);
+    type Theta = (usize, usize, Real, Real);
     type F = Real;
 
     fn get_feature(x: &X, theta: &Self::Theta) -> Real {
+        let a: Real = x.get_item(theta.0).clone().into();
+        let b: Real = x.get_item(theta.1).clone().into();
         let alpha: Real = theta.2;
-        let a: Real = (*x.get_item(theta.0)).into();
-        let b: Real = (*x.get_item(theta.1)).into();
-        a * alpha + b * (1.0 - alpha)
+        let beta: Real = theta.3;
+        a * alpha + b * beta
     }
 
     fn random<R: Rng>(x: &X, rng: &mut R) -> Self::Theta {
         let a = rng.gen_range(0, x.n_items());
-        let b = rng.gen_range(0, x.n_items());
-        let alpha = rng.gen();
-        debug_assert!(alpha >= 0.0);
-        debug_assert!(alpha <= 1.0);
-        (a, b, alpha)
+        let mut b = rng.gen_range(0, x.n_items() - 1);
+        if b == a {
+            b = a + 1;
+        }
+        let phi = rng.gen::<Real>() * 2.0 * PI;
+        //let phi: Real = 0.0;
+        let alpha = phi.cos();
+        let beta = phi.sin();
+        //let alpha = rng.gen::<Real>();
+        //let beta = rng.gen::<Real>();
+        (a, b, alpha, beta)
     }
 }
 
@@ -75,8 +83,8 @@ mod tests {
 
         type CS = Mix2;
 
-        assert_eq!(CS::get_feature(&x, &(0, 1, 0.5)), 1.5);
-        assert_eq!(CS::get_feature(&x, &(1, 3, 0.5)), 3.0);
-        assert_eq!(CS::get_feature(&x, &(4, 3, 0.1)), 4.1);
+        assert_eq!(CS::get_feature(&x, &(0, 1, 0.5, 0.5)), 1.5);
+        assert_eq!(CS::get_feature(&x, &(1, 3, 0.5, 0.5)), 3.0);
+        assert_eq!(CS::get_feature(&x, &(4, 3, 0.1, 0.9)), 4.1);
     }
 }
