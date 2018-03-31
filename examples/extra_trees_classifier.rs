@@ -3,11 +3,8 @@ extern crate gnuplot;
 extern crate image;
 extern crate rand;
 
-use std::{
-    f64,
-    f64::consts::PI,
-    fs::File,
-};
+use std::f64::consts::PI;
+use std::fs::File;
 
 use rand::{thread_rng, Rng};
 
