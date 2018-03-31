@@ -155,7 +155,7 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D, C=f64>
             }
 
             // stop early if we find a perfect split
-            if best_criterion  == 0.0 {
+            if best_criterion == 0.0 {
                 break
             }
         }
