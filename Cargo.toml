@@ -30,6 +30,10 @@ path = "examples/extra_trees_regressor.rs"
 name = "extra_trees_classifier"
 path = "examples/extra_trees_classifier.rs"
 
+[[example]]
+name = "rotational_classifier"
+path = "examples/rotational_classifier.rs"
+
 
 [[example]]
 name = "profile1"

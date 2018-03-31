@@ -149,16 +149,14 @@ impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D, C=f64>
 
             let new_criterion = C::calc_postsplit(left, right);
 
-            if new_criterion < best_criterion {
+            if new_criterion <= best_criterion {
                 best_criterion = new_criterion;
                 best_split = Some(split);
             }
 
             // stop early if we find a perfect split
-            if let Some(c) = best_criterion {
-                if c == 0.0 {
-                    break
-                }
+            if best_criterion == 0.0 {
+                break
             }
         }
 
