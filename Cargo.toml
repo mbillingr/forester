@@ -5,7 +5,7 @@ authors = ["Martin Billinger <flkazemakase@gmail.com>"]
 license = "MIT"
 homepage = "https://github.com/mbillingr/forester"
 repository = "https://github.com/mbillingr/forester"
-documentation = "https://github.com/mbillingr/forester"
+documentation = "https://docs.rs/forester/"
 description = """
 Experimental templated randomized forests of trees.
 """
