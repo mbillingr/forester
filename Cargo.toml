@@ -2,7 +2,13 @@
 name = "forester"
 version = "0.0.1"
 authors = ["Martin Billinger <flkazemakase@gmail.com>"]
-publish = false  # prevent publication by mistake
+license = "MIT"
+homepage = "https://github.com/mbillingr/forester"
+repository = "https://github.com/mbillingr/forester"
+documentation = "https://github.com/mbillingr/forester"
+description = """
+Experimental templated randomized forests of trees.
+"""
 
 [features]
 profiling = ["cpuprofiler"]
@@ -14,7 +20,7 @@ rand = "0.4"
 [dev-dependencies]
 criterion = { version = "0.2", default-features = false }
 gnuplot = "0.0.24"
-image = "*"
+image = "0.18"
 
 
 [[bench]]
