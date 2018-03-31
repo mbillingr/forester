@@ -3,27 +3,22 @@ extern crate gnuplot;
 extern crate image;
 extern crate rand;
 
-use std::{
-    f64,
-    f64::consts::PI,
-    fs::File,
-};
+use std::f64::consts::PI;
+use std::fs::File;
 
 use rand::{thread_rng, Rng, ThreadRng};
 
-use forester::{
-    traits::{LearnerMut, Predictor},
-    criteria::GiniCriterion,
-    datasets::TupleSample,
-    d_tree::DeterministicTree,
-    d_tree::DeterministicTreeBuilder,
-    ensemble::EnsembleBuilder,
-    features::Mix2,
-    predictors::CategoricalProbabilities,
-    predictors::ClassPredictor,
-    splitters::BestRandomSplit,
-    splitters::ThresholdSplitter,
-};
+use forester::traits::{LearnerMut, Predictor};
+use forester::criteria::GiniCriterion;
+use forester::datasets::TupleSample;
+use forester::d_tree::DeterministicTree;
+use forester::d_tree::DeterministicTreeBuilder;
+use forester::ensemble::EnsembleBuilder;
+use forester::features::Mix2;
+use forester::predictors::CategoricalProbabilities;
+use forester::predictors::ClassPredictor;
+use forester::splitters::BestRandomSplit;
+use forester::splitters::ThresholdSplitter;
 
 //use forester::api::extra_trees_classifier::{ExtraTreesClassifier, Sample};
 
