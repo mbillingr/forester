@@ -9,6 +9,8 @@ documentation = "https://docs.rs/forester/"
 description = """
 Experimental templated randomized forests of trees.
 """
+maintenance = { status = "experimental" }
+
 
 [features]
 profiling = ["cpuprofiler"]
