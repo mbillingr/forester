@@ -30,6 +30,11 @@ name = "benchmark"
 harness = false
 
 
+[[bench]]
+name = "partition"
+harness = false
+
+
 [[example]]
 name = "extra_trees_regressor"
 path = "examples/extra_trees_regressor.rs"
