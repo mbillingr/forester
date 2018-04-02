@@ -28,8 +28,6 @@ impl<T> GetItem for Vec<T> {
     fn n_items(&self) -> usize {self.len()}
 }
 
-// TODO: Implement GetItem for many more array sizes... (macro!)
-
 impl<T> GetItem for [T; 0] {
     type Item = T;
     fn get_item(&self, _: usize) -> &T {
@@ -38,66 +36,71 @@ impl<T> GetItem for [T; 0] {
     fn n_items(&self) -> usize {0}
 }
 
-impl<T> GetItem for [T; 1] {
-    type Item = T;
-    fn get_item(&self, i: usize) -> &T {
-        &self[i]
-    }
-    fn n_items(&self) -> usize {1}
+macro_rules! impl_getitem_for_array {
+    ( $( $size:expr ),* ) => {
+        $(
+            impl<T> GetItem for [T; $size] {
+                type Item = T;
+                fn get_item(&self, i: usize) -> &T {
+                    &self[i]
+                }
+                fn n_items(&self) -> usize {$size}
+            }
+        )*
+    };
 }
 
-impl<T> GetItem for [T; 2] {
-    type Item = T;
-    fn get_item(&self, i: usize) -> &T {
-        &self[i]
-    }
-    fn n_items(&self) -> usize {2}
-}
+impl_getitem_for_array!{ 1,  2,  3,  4,  5,  6,  7,  8}
+impl_getitem_for_array!{ 9, 10, 11, 12, 13, 14, 15, 16}
+impl_getitem_for_array!{17, 18, 19, 20, 21, 22, 23, 24}
+impl_getitem_for_array!{25, 26, 27, 28, 29, 30, 31, 32}
 
-impl<T> GetItem for [T; 3] {
-    type Item = T;
-    fn get_item(&self, i: usize) -> &T {
-        &self[i]
-    }
-    fn n_items(&self) -> usize {3}
-}
 
-impl<T> GetItem for [T; 4] {
-    type Item = T;
-    fn get_item(&self, i: usize) -> &T {
-        &self[i]
-    }
-    fn n_items(&self) -> usize {3}
-}
 
-impl<T> GetItem for [T; 5] {
-    type Item = T;
-    fn get_item(&self, i: usize) -> &T {
-        &self[i]
-    }
-    fn n_items(&self) -> usize {3}
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl<T> GetItem for [T; 10] {
-    type Item = T;
-    fn get_item(&self, i: usize) -> &T {
-        &self[i]
-    }
-    fn n_items(&self) -> usize {3}
-}
+    #[test]
+    fn array_getitem() {
+        let x = [1, 2, 3];
+        assert_eq!(x.get_item(1), &2);
+        assert_eq!(x.n_items(), 3);
 
-impl<T> GetItem for [T; 20] {
-    type Item = T;
-    fn get_item(&self, i: usize) -> &T {
-        &self[i]
+        let x = [1.0, 2.0, 3.0, 4.0, 5.0];
+        assert_eq!(x.get_item(3), &4.0);
+        assert_eq!(x.n_items(), 5);
     }
-    fn n_items(&self) -> usize {3}
-}
 
-impl<T> GetItem for [T; 30] {
-    type Item = T;
-    fn get_item(&self, i: usize) -> &T {
-        &self[i]
+    #[test]
+    fn vec_getitem() {
+        let x = vec![1, 2, 3];
+        assert_eq!(x.get_item(1), &2);
+        assert_eq!(x.n_items(), 3);
+
+        let x = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        assert_eq!(x.get_item(3), &4.0);
+        assert_eq!(x.n_items(), 5);
     }
-    fn n_items(&self) -> usize {3}
+
+    #[test]
+    fn slice_getitem() {
+        let y = vec![1, 2, 3];
+        let x: &[_] = &y;
+        assert_eq!(x.get_item(1), &2);
+        assert_eq!(x.n_items(), 3);
+
+        let y = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let x: &[_] = &y;
+        assert_eq!(x.get_item(3), &4.0);
+        assert_eq!(x.n_items(), 5);
+    }
+
+    #[test]
+    #[should_panic(expected = "Getting item from zero-length array")]
+    fn empty_getitem() {
+        let x: [i32; 0] = [];
+        assert_eq!(x.n_items(), 0);
+        x.get_item(0);
+    }
 }
