@@ -161,6 +161,10 @@ mod tests {
         let a = vec!(1, 2, 1);
         let b = vec!(2, 0, -3);
         assert_eq!(a.dot(&b), -1);
+
+        let a = vec!(1, 2, -1);
+        let b = vec!(2, 1, 4);
+        assert_eq!(a.dot(&b), 0);
     }
 
     #[test]
@@ -172,6 +176,25 @@ mod tests {
         let a = [1, 2, 1];
         let b = [2, 0, -3];
         assert_eq!(a.dot(&b), -1);
+
+        let a = [1, 2, -1];
+        let b = [2, 1, 4];
+        assert_eq!(a.dot(&b), 0);
+    }
+
+    #[test]
+    fn dot_slice() {
+        let a: &[_] = &[1.0, 2.0, 3.0];
+        let b: &[_] = &[2.0, 1.0, 1.0];
+        assert_eq!(a.dot(b), 7.0);
+
+        let a: &[_] = &[1, 2, 1];
+        let b: &[_] = &[2, 0, -3];
+        assert_eq!(a.dot(b), -1);
+
+        let a: &[_] = &[1, 2, -1];
+        let b: &[_] = &[2, 1, 4];
+        assert_eq!(a.dot(b), 0);
     }
 
     #[test]
