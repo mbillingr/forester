@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
-use super::DataSet;
 use super::LearnerMut;
 use super::Predictor;
+use super::Sample;
 
 use array_ops::IterMean;
 
@@ -24,14 +24,14 @@ impl<X, Z, P: Predictor<X, Z>> Predictor<X, Z> for Ensemble<X, Z, P>
 
 
 #[derive(Debug)]
-pub struct EnsembleBuilder<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> {
+pub struct EnsembleBuilder<Z, S: Sample, B: LearnerMut<S, P>, P: Predictor<S::X, Z>> {
     n_estimators: usize,
     estimator_builder: B,
-    _p: PhantomData<(Z, P, D)>,
+    _p: PhantomData<(Z, P, S)>,
 }
 
-impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> EnsembleBuilder<Z, D, B, P> {
-    pub fn new(n_estimators: usize, estimator_builder: B) -> EnsembleBuilder<Z, D, B, P> {
+impl<Z, S: Sample, B: LearnerMut<S, P>, P: Predictor<S::X, Z>> EnsembleBuilder<Z, S, B, P> {
+    pub fn new(n_estimators: usize, estimator_builder: B) -> EnsembleBuilder<Z, S, B, P> {
         EnsembleBuilder {
             n_estimators,
             estimator_builder,
@@ -40,8 +40,8 @@ impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> Ensembl
     }
 }
 
-impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> Default for EnsembleBuilder<Z, D, B, P> {
-    fn default() -> EnsembleBuilder<Z, D, B, P> {
+impl<Z, S: Sample, B: LearnerMut<S, P>, P: Predictor<S::X, Z>> Default for EnsembleBuilder<Z, S, B, P> {
+    fn default() -> EnsembleBuilder<Z, S, B, P> {
         EnsembleBuilder {
             n_estimators: 10,
             estimator_builder: B::default(),
@@ -50,9 +50,9 @@ impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> Default
     }
 }
 
-impl<Z, D: ?Sized + DataSet, B: LearnerMut<D, P>, P: Predictor<D::X, Z>> LearnerMut<D,  Ensemble<D::X, Z, P>> for EnsembleBuilder<Z, D, B, P>
+impl<Z, S: Sample, B: LearnerMut<S, P>, P: Predictor<S::X, Z>> LearnerMut<S,  Ensemble<S::X, Z, P>> for EnsembleBuilder<Z, S, B, P>
 {
-    fn fit(&self, data: &mut D) -> Ensemble<D::X, Z, P> {
+    fn fit(&self, data: &mut [S]) -> Ensemble<S::X, Z, P> {
         let mut estimators = Vec::with_capacity(self.n_estimators);
 
         for _ in 0..self.n_estimators {

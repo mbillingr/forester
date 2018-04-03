@@ -16,10 +16,10 @@ impl<S> SplitCriterion for VarCriterion<S>
     where S: Sample,
           S::Y: Copy + Into<Real>,
 {
-    type D = [S];
+    type S = S;
     type C = Real;
 
-    fn calc_presplit(data: &Self::D) -> Real {
+    fn calc_presplit(data: &[Self::S]) -> Real {
         let mut sum = 0.0;
         let mut ssum = 0.0;
 
@@ -35,7 +35,7 @@ impl<S> SplitCriterion for VarCriterion<S>
         ssum / n - mean * mean
     }
 
-    fn calc_postsplit(yl: &Self::D, yr: &Self::D) -> Real {
+    fn calc_postsplit(yl: &[Self::S], yr: &[Self::S]) -> Real {
         let a = yl.len() as Real;
         let b = yr.len() as Real;
         (Self::calc_presplit(yl) * a + Self::calc_presplit(yr) * b) / (a + b)
@@ -49,10 +49,10 @@ pub struct GiniCriterion<D: ?Sized> {
 impl<S> SplitCriterion for GiniCriterion<S>
     where S: Sample<Y=u8>
 {
-    type D = [S];
+    type S = S;
     type C = Real;
 
-    fn calc_presplit(data: &Self::D) -> Real {
+    fn calc_presplit(data: &[Self::S]) -> Real {
         let mut counts = CategoricalProbabilities::new();
 
         for sample in data {
@@ -66,7 +66,7 @@ impl<S> SplitCriterion for GiniCriterion<S>
         gini
     }
 
-    fn calc_postsplit(yl: &Self::D, yr: &Self::D) -> Real {
+    fn calc_postsplit(yl: &[Self::S], yr: &[Self::S]) -> Real {
         let a = yl.len() as Real;
         let b = yr.len() as Real;
         (Self::calc_presplit(yl) * a + Self::calc_presplit(yr) * b) / (a + b)

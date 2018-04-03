@@ -17,7 +17,7 @@ use traits::LearnerMut;
 pub mod extra_trees_regressor {
     use super::*;
 
-    pub type Builder<X, Y> = EnsembleBuilder<Y, Data<X, Y>, TreeBuilder<X, Y>, Tree<X, Y>>;
+    pub type Builder<X, Y> = EnsembleBuilder<Y, Sample<X, Y>, TreeBuilder<X, Y>, Tree<X, Y>>;
 
     pub type Model<X, Y> = Ensemble<X, Y, Tree<X, Y>>;
 
@@ -25,11 +25,11 @@ pub mod extra_trees_regressor {
 
     pub type Tree<X, Y> = DeterministicTree<Splitter<X, Y>, Predictor<X, Y>>;
 
-    pub type Data<X, Y> = [Sample<X, Y>];
+    //pub type Data<X, Y> = [Sample<X, Y>];
     pub type Sample<X, Y> = TupleSample<Features, X, Y>;
 
     pub type SplitFitter<X, Y> = BestRandomSplit<Splitter<X, Y>, SplitCriterion<X, Y>, ThreadRng>;
-    pub type Splitter<X, Y> = ThresholdSplitter<Data<X, Y>>;
+    pub type Splitter<X, Y> = ThresholdSplitter<Sample<X, Y>>;
     pub type Predictor<X, Y> =  ConstMean<Sample<X, Y>>;
     pub type Features = ColumnSelect;
     pub type SplitCriterion<X, Y> = VarCriterion<Sample<X, Y>>;
@@ -71,12 +71,12 @@ pub mod extra_trees_regressor {
         }
     }
 
-    impl<X> LearnerMut<Data<X, f64>, Model<X, f64>> for ExtraTreesRegressor
+    impl<X> LearnerMut<Sample<X, f64>, Model<X, f64>> for ExtraTreesRegressor
         where X: Clone + GetItem,
               X::Item: Clone + cmp::PartialOrd + SampleRange,
     {
 
-        fn fit(&self, data: &mut Data<X, f64>) -> Model<X, f64>
+        fn fit(&self, data: &mut [Sample<X, f64>]) -> Model<X, f64>
         {
             Builder::new(
                 self.n_estimators,
@@ -95,7 +95,7 @@ pub mod extra_trees_regressor {
 pub mod extra_trees_classifier {
     use super::*;
 
-    pub type Builder<X> = EnsembleBuilder<CategoricalProbabilities, Data<X>, TreeBuilder<X>, Tree<X>>;
+    pub type Builder<X> = EnsembleBuilder<CategoricalProbabilities, Sample<X>, TreeBuilder<X>, Tree<X>>;
 
     pub type Model<X> = Ensemble<X, CategoricalProbabilities, Tree<X>>;
 
@@ -103,12 +103,12 @@ pub mod extra_trees_classifier {
 
     pub type Tree<X> = DeterministicTree<Splitter<X>, Predictor<X>>;
 
-    pub type Data<X> = [Sample<X>];
+    //pub type Data<X> = [Sample<X>];
     pub type Sample<X> = TupleSample<Features, X, Y>;
     pub type Y = u8;
 
     pub type SplitFitter<X> = BestRandomSplit<Splitter<X>, SplitCriterion<X>, ThreadRng>;
-    pub type Splitter<X> = ThresholdSplitter<Data<X>>;
+    pub type Splitter<X> = ThresholdSplitter<Sample<X>>;
     pub type Predictor<X> =  ClassPredictor<Sample<X>>;
     pub type Features = ColumnSelect;
     pub type SplitCriterion<X> = GiniCriterion<Sample<X>>;
@@ -150,12 +150,12 @@ pub mod extra_trees_classifier {
         }
     }
 
-    impl<X> LearnerMut<Data<X>, Model<X>> for ExtraTreesClassifier
+    impl<X> LearnerMut<Sample<X>, Model<X>> for ExtraTreesClassifier
         where X: Clone + GetItem,
               X::Item: Clone + cmp::PartialOrd + SampleRange,
     {
 
-        fn fit(&self, data: &mut Data<X>) -> Model<X>
+        fn fit(&self, data: &mut [Sample<X>]) -> Model<X>
         {
             Builder::new(
                 self.n_estimators,

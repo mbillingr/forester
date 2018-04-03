@@ -18,17 +18,17 @@ use super::Splitter;
 use random::DefaultRng;
 
 /// Use a simple threshold for deterministic split.
-pub struct ThresholdSplitter<D>
-    where D: ?Sized + DataSet,
+pub struct ThresholdSplitter<S>
+    where S: Sample,
 {
-    theta: D::Theta,
-    threshold: D::F,
+    theta: S::Theta,
+    threshold: S::F,
 }
 
-impl<D> ThresholdSplitter<D>
-    where D: ?Sized + DataSet
+impl<S> ThresholdSplitter<S>
+    where S: Sample
 {
-    pub fn new(theta: D::Theta, threshold: D::F) -> Self {
+    pub fn new(theta: S::Theta, threshold: S::F) -> Self {
         ThresholdSplitter {
             theta,
             threshold
@@ -36,34 +36,34 @@ impl<D> ThresholdSplitter<D>
     }
 }
 
-impl<D> fmt::Debug for ThresholdSplitter<D>
-    where D: ?Sized + DataSet,
-          D::Theta: fmt::Debug,
-          D::F: fmt::Debug
+impl<S> fmt::Debug for ThresholdSplitter<S>
+    where S: Sample,
+          S::Theta: fmt::Debug,
+          S::F: fmt::Debug
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ThresholdSplitter (theta: {:?}, threshold: {:?})", self.theta, self.threshold)
     }
 }
 
-impl<D> Splitter for ThresholdSplitter<D>
-    where D: ?Sized + DataSet
+impl<S> Splitter for ThresholdSplitter<S>
+    where S: Sample
 {
-    type D = D;
+    type S = S;
 
-    fn theta(&self) -> &<Self::D as DataSet>::Theta {
+    fn theta(&self) -> &<Self::S as Sample>::Theta {
         &self.theta
     }
 }
 
-impl<D> RandomSplit<ThresholdSplitter<D>> for ThresholdSplitter<D>
-    where D: ?Sized + DataSet,
-          D::F: SampleRange
+impl<S> RandomSplit<ThresholdSplitter<S>> for ThresholdSplitter<S>
+    where S: Sample,
+          S::F: SampleRange
 {
-    fn new_random<R: Rng>(data: &D, rng: &mut R) -> Option<ThresholdSplitter<D>> {
+    fn new_random<R: Rng>(data: &[S], rng: &mut R) -> Option<ThresholdSplitter<S>> {
         let theta = data.random_feature(rng);
 
-        let f = D::FX::get_feature(&data.get(0).get_x(), &theta);
+        let f = S::FX::get_feature(&data[0].get_x(), &theta);
 
         let (min, max) = data.reduce_feature(&theta, (f.clone(), f),
                                              |minmax, f| (
@@ -85,12 +85,11 @@ impl<D> RandomSplit<ThresholdSplitter<D>> for ThresholdSplitter<D>
     }
 }
 
-impl<D> DeterministicSplitter for ThresholdSplitter<D>
-    where D: ?Sized + DataSet,
-          //<D::Item as Sample>::F: SampleRange + PartialOrd
+impl<S> DeterministicSplitter for ThresholdSplitter<S>
+    where S: Sample
 {
-    fn split(&self, x: &<Self::D as DataSet>::X) -> Side {
-        let f = D::FX::get_feature(x, &self.theta);
+    fn split(&self, x: &<Self::S as Sample>::X) -> Side {
+        let f = S::FX::get_feature(x, &self.theta);
         if f <= self.threshold {
             Side::Left
         } else {
@@ -126,12 +125,12 @@ impl<S, C, R: DefaultRng> Default for BestRandomSplit<S, C, R> {
 }
 
 // this specialized for float 64 criteria... this is not really necessary, but allows an optimization
-impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<D=S::D, C=f64>, R: DefaultRng> SplitFitter for BestRandomSplit<S, C, R>
+impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<S=S::S, C=f64>, R: DefaultRng> SplitFitter for BestRandomSplit<S, C, R>
 {
-    type D = S::D;
+    type S = S::S;
     type Split = S;
     type Criterion = C;
-    fn find_split(&self, data: &mut Self::D) -> Option<Self::Split> {
+    fn find_split(&self, data: &mut [Self::S]) -> Option<Self::Split> {
         let mut best_criterion = C::calc_presplit(data);
         let mut best_split = None;
 
@@ -192,7 +191,7 @@ mod tests {
             TupleSample::new([7], 12.0),
         ];
 
-        let brs: BestRandomSplit<ThresholdSplitter<[Sample]>, VarCriterion<_>, _> = BestRandomSplit {
+        let brs: BestRandomSplit<ThresholdSplitter<Sample>, VarCriterion<_>, _> = BestRandomSplit {
             n_splits: 100,  // Make *almost* sure that we will find the optimal split
             rng: RefCell::new(thread_rng()),
             _p: PhantomData
@@ -218,7 +217,7 @@ mod tests {
             TupleSample::new([42.0], 12.0),
         ];
 
-        let brs: BestRandomSplit<ThresholdSplitter<[Sample]>, VarCriterion<_>, _> = BestRandomSplit {
+        let brs: BestRandomSplit<ThresholdSplitter<Sample>, VarCriterion<_>, _> = BestRandomSplit {
             n_splits: 100,  // Make *almost* sure that we will find the optimal split
             rng: RefCell::new(thread_rng()),
             _p: PhantomData

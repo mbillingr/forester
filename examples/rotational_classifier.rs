@@ -23,10 +23,10 @@ use forester::splitters::ThresholdSplitter;
 //use forester::api::extra_trees_classifier::{ExtraTreesClassifier, Sample};
 
 pub type Sample = TupleSample<Mix2, [f64; 2], u8>;
-pub type SplitFitter = BestRandomSplit<ThresholdSplitter<[Sample]>, GiniCriterion<Sample>, ThreadRng>;
-pub type Tree = DeterministicTree<ThresholdSplitter<[Sample]>, ClassPredictor<Sample>>;
+pub type SplitFitter = BestRandomSplit<ThresholdSplitter<Sample>, GiniCriterion<Sample>, ThreadRng>;
+pub type Tree = DeterministicTree<ThresholdSplitter<Sample>, ClassPredictor<Sample>>;
 pub type TreeBuilder = DeterministicTreeBuilder<SplitFitter, ClassPredictor<Sample>>;
-pub type Builder = EnsembleBuilder<CategoricalProbabilities, [Sample], TreeBuilder, Tree>;
+pub type Builder = EnsembleBuilder<CategoricalProbabilities, Sample, TreeBuilder, Tree>;
 
 const N_CLASSES: u8 = 3;
 const N_SAMPLES: usize = 1000;
