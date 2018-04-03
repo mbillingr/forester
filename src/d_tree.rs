@@ -13,7 +13,7 @@ use super::Splitter;
 /// A decision tree node. Can be either a split node with a Splitter and two children, or a leaf
 /// node with a LeafPredictor.
 #[derive(Debug)]
-enum Node<S: Splitter, L: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>>
+pub enum Node<S: Splitter, L: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>>
 {
     Invalid,  // placeholder used during tree construction
     Split{split: S, left: usize, right: usize},
@@ -24,7 +24,7 @@ enum Node<S: Splitter, L: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>>
 #[derive(Debug)]
 pub struct DeterministicTree<S: Splitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>>
 {
-    nodes: Vec<Node<S, P>>,
+    pub nodes: Vec<Node<S, P>>,  // Would rather make this private, but benchmarks need to have access
 }
 
 impl<S: Splitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> DeterministicTree<S, P> {
@@ -50,7 +50,7 @@ impl<S: ProbabilisticSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::
 
 impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Predictor<<P::S as Sample>::X, P::Output> for DeterministicTree<S, P>
 {
-    /// Pass a sample `x` down the tree and predict output of final leaf.
+/*    /// Pass a sample `x` down the tree and predict output of final leaf.
     fn predict(&self, x: &<P::S as Sample>::X) -> P::Output {
         let mut n = 0;
         loop {
@@ -65,6 +65,28 @@ impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::
                     return l.predict(x)
                 }
                 Node::Invalid => panic!("Invalid node found. Tree may not be fully constructed.")
+            }
+        }
+    }*/
+
+    /// Pass a sample `x` down the tree and predict output of final leaf.
+    fn predict(&self, x: &<P::S as Sample>::X) -> P::Output {
+        let start = &self.nodes[0] as *const Node<S, P>;
+        let mut node = &self.nodes[0] as *const Node<S, P>;
+        unsafe {
+            loop {
+                match *node {
+                    Node::Split { ref split, left, right } => {
+                        match split.split(x) {
+                            Side::Left => node = start.offset(left as isize),
+                            Side::Right => node = start.offset(right as isize),
+                        }
+                    }
+                    Node::Leaf(ref l) => {
+                        return l.predict(x)
+                    }
+                    Node::Invalid => panic!("Invalid node found. Tree may not be fully constructed.")
+                }
             }
         }
     }
