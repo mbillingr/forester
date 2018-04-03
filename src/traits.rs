@@ -173,13 +173,3 @@ pub trait LearnerMut<S: Sample, Output=Self>: Default {
 pub trait Predictor<X, Y> {
     fn predict(&self, s: &X) -> Y;
 }
-
-/// Trait that estimates the (posterior) probability of a sample.
-pub trait ProbabilisticPredictor<S> {
-    fn prob(&self, s: &S) -> Real;
-}
-
-pub trait CategoricalProbability<T> {
-    const N: usize;
-    fn prob(&self);
-}

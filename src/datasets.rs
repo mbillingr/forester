@@ -6,12 +6,6 @@ use super::Sample;
 
 use get_item::GetItem;
 
-
-trait Sortable<T> {
-    fn sort_unstable_by<F>(&mut self, predicate: F)
-        where F: FnMut(&T, &T) -> cmp::Ordering;
-}
-
 #[derive(Debug)]
 pub struct TupleSample<FX, X, Y> {
     data: (X, Y),
