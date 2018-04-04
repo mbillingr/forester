@@ -25,18 +25,17 @@ impl<S: ?Sized> ConstMean<S> {
     }
 }
 
-impl<S: Sample<Y=Real>> LeafPredictor for ConstMean<S>
+impl<S: Sample<Y=Real>> LeafPredictor<S> for ConstMean<S>
     //where S::Y: Real + Copy + iter::Sum + ops::Div<Output=S::Y>
 {
     type Output = S::Y;
-    type S = S;
 
-    fn predict(&self, _x: &<Self::S as Sample>::X) -> Self::Output {
+    fn predict(&self, _x: &S::X) -> Self::Output {
         self.value
     }
 
-    fn fit(data: &[Self::S]) -> Self {
-        let sum: <Self::S as Sample>::Y = data.iter().map(|s| s.get_y()).sum();
+    fn fit(data: &[S]) -> Self {
+        let sum: S::Y = data.iter().map(|s| s.get_y()).sum();
         let n = data.len() as Real;
         ConstMean {
             value: sum / n,
@@ -53,19 +52,18 @@ pub struct LinearRegression<T, S: ?Sized> {
     _p: PhantomData<S>,
 }
 
-impl<S: Sample> LeafPredictor for LinearRegression<S::Y, S>
+impl<S: Sample> LeafPredictor<S> for LinearRegression<S::Y, S>
     where S::Y: Copy + ops::Mul<Output=S::Y> + ops::Add<Output=S::Y>,
           S::X: Dot<[S::Y], Output=S::Y>
 {
     type Output = S::Y;
-    type S = S;
 
     /// predicted value
-    fn predict(&self, x: &<Self::S as Sample>::X) -> Self::Output {
+    fn predict(&self, x: &S::X) -> Self::Output {
         self.intercept + x.dot(&self.weights)
     }
 
-    fn fit(_data: &[Self::S]) -> Self {
+    fn fit(_data: &[S]) -> Self {
         unimplemented!("LinearRegression::fit()")
     }
 }
@@ -78,17 +76,16 @@ pub struct ConstGaussian<S: ?Sized> {
     _p: PhantomData<S>,
 }
 
-impl<S: Sample<Y=Real>> LeafPredictor for ConstGaussian<S>
+impl<S: Sample<Y=Real>> LeafPredictor<S> for ConstGaussian<S>
 {
 
     type Output = S::Y;
-    type S = S;
 
-    fn predict(&self, _x: &<Self::S as Sample>::X) -> Self::Output {
+    fn predict(&self, _x: &S::X) -> Self::Output {
         self.mean
     }
 
-    fn fit(data: &[Self::S]) -> Self {
+    fn fit(data: &[S]) -> Self {
         let mut sum = S::Y::zero();
         let mut ssum = S::Y::zero();
 
@@ -111,9 +108,9 @@ impl<S: Sample<Y=Real>> LeafPredictor for ConstGaussian<S>
     }
 }
 
-impl<S: Sample<Y=Real>> ProbabilisticLeafPredictor for ConstGaussian<S>
+impl<S: Sample<Y=Real>> ProbabilisticLeafPredictor<S> for ConstGaussian<S>
 {
-    fn prob(&self, s: &Self::S) -> Real {
+    fn prob(&self, s: &S) -> Real {
         let y = s.get_y();
         Real::exp(-(y - self.mean).powi(2) / (2.0 * self.variance)) / (2.0 * Real::pi() * self.variance).sqrt()
     }
@@ -178,17 +175,16 @@ pub struct ClassPredictor<S: ?Sized> {
     _p: PhantomData<S>,
 }
 
-impl<S: Sample<Y=u8>> LeafPredictor for ClassPredictor<S>
+impl<S: Sample<Y=u8>> LeafPredictor<S> for ClassPredictor<S>
 {
 
     type Output = CategoricalProbabilities;
-    type S = S;
 
-    fn predict(&self, _x: &<Self::S as Sample>::X) -> Self::Output {
+    fn predict(&self, _x: &S::X) -> Self::Output {
         self.counts.clone()
     }
 
-    fn fit(data: &[Self::S]) -> Self {
+    fn fit(data: &[S]) -> Self {
         let mut counts = CategoricalProbabilities::new();
 
         for sample in data {

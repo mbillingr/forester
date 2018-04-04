@@ -106,23 +106,22 @@ pub trait SplitCriterion {
 }
 
 /// Prediction of the final Leaf value.
-pub trait LeafPredictor
+pub trait LeafPredictor<S: Sample>
 {
     type Output;
-    type S: Sample;
 
     /// predicted value
-    fn predict(&self, x: &<Self::S as Sample>::X) -> Self::Output;
+    fn predict(&self, x: &S::X) -> Self::Output;
 
     /// fit predictor to data
-    fn fit(data: &[Self::S]) -> Self;
+    fn fit(data: &[S]) -> Self;
 }
 
 /// The probabilistic leaf predictor models uncertainty in the prediction.
-pub trait ProbabilisticLeafPredictor: LeafPredictor
+pub trait ProbabilisticLeafPredictor<S: Sample>: LeafPredictor<S>
 {
     /// probability of given output `p(y|x)`
-    fn prob(&self, s: &Self::S) -> Real;
+    fn prob(&self, s: &S) -> Real;
 }
 
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
