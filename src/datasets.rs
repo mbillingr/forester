@@ -37,12 +37,12 @@ impl<X, Y, FX> Sample for TupleSample<FX, X, Y>
         FX::get_feature(&self.data.0, theta)
     }*/
 
-    fn get_x(&self) -> Self::X {
-        self.data.0.clone()
+    fn get_x(&self) -> &Self::X {
+        &self.data.0
     }
 
-    fn get_y(&self) -> Self::Y {
-        self.data.1.clone()
+    fn get_y(&self) -> &Self::Y {
+        &self.data.1
     }
 }
 
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn dataset_sort() {
         let s: TupleSample<Mix2, _, _> = TupleSample{data: ([1, 2], 3), _p: PhantomData};
-        assert_eq!(Mix2::get_feature(&s.get_x(), &(0, 1, 0.5, 0.5)), 1.5);
+        assert_eq!(Mix2::get_feature(s.get_x(), &(0, 1, 0.5, 0.5)), 1.5);
 
         let data: &mut [TupleSample<ColumnSelect, _, _>] =
             &mut [TupleSample{data: ([0, 3], 1), _p: PhantomData},
@@ -65,15 +65,15 @@ mod tests {
                  TupleSample{data: ([1, 1], 3), _p: PhantomData},
                  TupleSample{data: ([3, 2], 4), _p: PhantomData}] as &mut [_];
 
-        assert_eq!(ColumnSelect::get_feature(&data[0].get_x(), &1), 3);
+        assert_eq!(ColumnSelect::get_feature(data[0].get_x(), &1), 3);
         assert_eq!(data.n_samples(), 4);
 
         let i = data.partition_by_split(&ThresholdSplitter::new(1, 1));
         assert_eq!(i, 2);
-        assert_eq!(data[0].get_y(), 2);
-        assert_eq!(data[1].get_y(), 3);
-        assert_eq!(data[2].get_y(), 1);
-        assert_eq!(data[3].get_y(), 4);
+        assert_eq!(data[0].get_y(), &2);
+        assert_eq!(data[1].get_y(), &3);
+        assert_eq!(data[2].get_y(), &1);
+        assert_eq!(data[3].get_y(), &4);
 
         {
             let (a, _b) = data.split_at_mut(2);
@@ -81,10 +81,10 @@ mod tests {
             assert_eq!(i, 1);
         }
 
-        assert_eq!(data[0].get_y(), 3);
-        assert_eq!(data[1].get_y(), 2);
-        assert_eq!(data[2].get_y(), 1);
-        assert_eq!(data[3].get_y(), 4);
+        assert_eq!(data[0].get_y(), &3);
+        assert_eq!(data[1].get_y(), &2);
+        assert_eq!(data[2].get_y(), &1);
+        assert_eq!(data[3].get_y(), &4);
 
     }
 }

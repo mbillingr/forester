@@ -37,8 +37,8 @@ pub trait Sample {
     type FX: Feature<Self::X, Theta=Self::Theta, F=Self::F>;
     type X;
     type Y;
-    fn get_x(&self) -> Self::X;
-    fn get_y(&self) -> Self::Y;
+    fn get_x(&self) -> &Self::X;
+    fn get_y(&self) -> &Self::Y;
 }
 
 pub trait DataSet {

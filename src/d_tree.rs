@@ -215,7 +215,7 @@ mod tests {
         let tree = tb.fit(&mut data);
 
         for sample in data {
-            assert_eq!(tree.predict(&sample.get_x()), sample.get_y());
+            assert_eq!(tree.predict(sample.get_x()), *sample.get_y());
         }
     }
 }

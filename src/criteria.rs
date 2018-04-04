@@ -24,7 +24,7 @@ impl<S> SplitCriterion for VarCriterion<S>
         let mut ssum = 0.0;
 
         for sample in data {
-            let yi: Real = sample.get_y().into();
+            let yi: Real = (*sample.get_y()).into();
             sum += yi;
             ssum += yi * yi;
         }
@@ -56,7 +56,7 @@ impl<S> SplitCriterion for GiniCriterion<S>
         let mut counts = CategoricalProbabilities::new();
 
         for sample in data {
-            let yi = sample.get_y();
+            let yi = *sample.get_y();
             counts.add_one(yi);
         }
 

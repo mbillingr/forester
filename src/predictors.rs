@@ -192,7 +192,7 @@ impl<S: Sample<Y=u8>> LeafPredictor for ClassPredictor<S>
         let mut counts = CategoricalProbabilities::new();
 
         for sample in data {
-            let yi = sample.get_y();
+            let yi = *sample.get_y();
             counts.add_one(yi);
         }
 
@@ -237,10 +237,10 @@ mod tests {
             _p: PhantomData,
         };
 
-        assert_eq!(reg.predict(&data[0].get_x()), 1.0);
-        assert_eq!(reg.predict(&data[1].get_x()), 2.0);
-        assert_eq!(reg.predict(&data[2].get_x()), 13.0);
-        assert_eq!(reg.predict(&data[3].get_x()), 14.0);
+        assert_eq!(reg.predict(data[0].get_x()), 1.0);
+        assert_eq!(reg.predict(data[1].get_x()), 2.0);
+        assert_eq!(reg.predict(data[2].get_x()), 13.0);
+        assert_eq!(reg.predict(data[3].get_x()), 14.0);
     }
 
     #[test]
