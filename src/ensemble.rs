@@ -92,7 +92,7 @@ mod tests {
             .map(|(x, y)| TupleSample::<ColumnSelect, _, _>::new(x, y))
             .collect();
 
-        let estimator_builder: DeterministicTreeBuilder<BestRandomSplit<ThresholdSplitter<_>, VarCriterion<_>, ThreadRng>, ConstMean<_>> = DeterministicTreeBuilder::default();
+        let estimator_builder: DeterministicTreeBuilder<_, BestRandomSplit<ThresholdSplitter<_>, VarCriterion<_>, ThreadRng>, ConstMean<_>> = DeterministicTreeBuilder::default();
         let builder = EnsembleBuilder::new(4, estimator_builder);
 
         let model = builder.fit(&mut data);

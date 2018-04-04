@@ -25,7 +25,7 @@ use forester::splitters::ThresholdSplitter;
 pub type Sample = TupleSample<Mix2, [f64; 2], u8>;
 pub type SplitFitter = BestRandomSplit<ThresholdSplitter<Sample>, GiniCriterion<Sample>, ThreadRng>;
 pub type Tree = DeterministicTree<Sample, ThresholdSplitter<Sample>, ClassPredictor<Sample>>;
-pub type TreeBuilder = DeterministicTreeBuilder<SplitFitter, ClassPredictor<Sample>>;
+pub type TreeBuilder = DeterministicTreeBuilder<Sample, SplitFitter, ClassPredictor<Sample>>;
 pub type Builder = EnsembleBuilder<CategoricalProbabilities, Sample, TreeBuilder, Tree>;
 
 const N_CLASSES: u8 = 3;

@@ -46,17 +46,13 @@ impl<S> fmt::Debug for ThresholdSplitter<S>
     }
 }
 
-impl<S> Splitter for ThresholdSplitter<S>
-    where S: Sample
-{
-    type S = S;
-
-    fn theta(&self) -> &<Self::S as Sample>::Theta {
+impl<S: Sample> Splitter<S> for ThresholdSplitter<S> {
+    fn theta(&self) -> &S::Theta {
         &self.theta
     }
 }
 
-impl<S> RandomSplit<ThresholdSplitter<S>> for ThresholdSplitter<S>
+impl<S> RandomSplit<S, ThresholdSplitter<S>> for ThresholdSplitter<S>
     where S: Sample,
           S::F: SampleRange
 {
@@ -85,10 +81,10 @@ impl<S> RandomSplit<ThresholdSplitter<S>> for ThresholdSplitter<S>
     }
 }
 
-impl<S> DeterministicSplitter for ThresholdSplitter<S>
+impl<S> DeterministicSplitter<S> for ThresholdSplitter<S>
     where S: Sample
 {
-    fn split(&self, x: &<Self::S as Sample>::X) -> Side {
+    fn split(&self, x: &S::X) -> Side {
         let f = S::FX::get_feature(x, &self.theta);
         if f <= self.threshold {
             Side::Left
@@ -125,19 +121,22 @@ impl<S, C, R: DefaultRng> Default for BestRandomSplit<S, C, R> {
 }
 
 // this specialized for float 64 criteria... this is not really necessary, but allows an optimization
-impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<S::S, C=f64>, R: DefaultRng> SplitFitter for BestRandomSplit<S, C, R>
+impl<S, SP, C, R> SplitFitter<S> for BestRandomSplit<SP, C, R>
+    where S: Sample,
+          SP: DeterministicSplitter<S> + RandomSplit<S, SP>,
+          C: SplitCriterion<S, C=f64>,
+          R: DefaultRng,
 {
-    type S = S::S;
-    type Split = S;
+    type Split = SP;
     type Criterion = C;
-    fn find_split(&self, data: &mut [Self::S]) -> Option<Self::Split> {
+    fn find_split(&self, data: &mut [S]) -> Option<Self::Split> {
         let mut best_criterion = C::calc_presplit(data);
         let mut best_split = None;
 
         let mut rng = self.rng.borrow_mut();
 
         for _ in 0..self.n_splits {
-            let split: S = match Self::Split::new_random(data, &mut *rng) {
+            let split: SP = match Self::Split::new_random(data, &mut *rng) {
                 Some(s) => s,
                 None => continue
             };

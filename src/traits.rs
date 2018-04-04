@@ -52,7 +52,7 @@ pub trait DataSet {
     fn n_samples(&self) -> usize;
     fn get(&self, i: usize) -> &Self::Item;
 
-    fn partition_by_split<S: DeterministicSplitter<S=Self::Item>>(&mut self, s: &S) -> usize;
+    fn partition_by_split<S: DeterministicSplitter<Self::Item>>(&mut self, s: &S) -> usize;
 
     fn subsets(&mut self, i: usize) -> (&mut Self, &mut Self);
 
@@ -80,7 +80,7 @@ impl<S> DataSet for [S]
         &self[i]
     }
 
-    fn partition_by_split<SP: DeterministicSplitter<S=S>>(&mut self, split: &SP) -> usize {
+    fn partition_by_split<SP: DeterministicSplitter<S>>(&mut self, split: &SP) -> usize {
         self.partition(|sample| split.split(&sample.get_x()) == Side::Left)
     }
 
@@ -105,8 +105,7 @@ pub trait SplitCriterion<S: Sample> {
 }
 
 /// Prediction of the final Leaf value.
-pub trait LeafPredictor<S: Sample>
-{
+pub trait LeafPredictor<S: Sample> {
     type Output;
 
     /// predicted value
@@ -117,44 +116,41 @@ pub trait LeafPredictor<S: Sample>
 }
 
 /// The probabilistic leaf predictor models uncertainty in the prediction.
-pub trait ProbabilisticLeafPredictor<S: Sample>: LeafPredictor<S>
-{
+pub trait ProbabilisticLeafPredictor<S: Sample>: LeafPredictor<S> {
     /// probability of given output `p(y|x)`
     fn prob(&self, s: &S) -> Real;
 }
 
 /// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
-pub trait Splitter {
-    type S: Sample;
-    fn theta(&self) -> &<Self::S as Sample>::Theta;
+pub trait Splitter<S: Sample> {
+    fn theta(&self) -> &S::Theta;
 }
 
 /// Assigns a sample to either side of the split.
-pub trait DeterministicSplitter: Splitter {
+pub trait DeterministicSplitter<S: Sample>: Splitter<S> {
     //fn split(&self, f: &<Self::F as FeatureSet>::Sample::Output) -> Side;
-    fn split(&self, x: &<Self::S as Sample>::X) -> Side;
+    fn split(&self, x: &S::X) -> Side;
 }
 
 /// Assigns a sample to both sides of the split with some probability each.
-pub trait ProbabilisticSplitter: Splitter {
+pub trait ProbabilisticSplitter<S: Sample>: Splitter<S> {
     /// Probability that the sample belongs to the left side of the split
-    fn p_left(&self, x: &<Self::S as Sample>::X) -> Real;
+    fn p_left(&self, x: &S::X) -> Real;
 
     /// Probability that the sample belongs to the right side of the split
-    fn p_right(&self, x: &<Self::S as Sample>::X) -> Real { 1.0 - self.p_left(x) }
+    fn p_right(&self, x: &S::X) -> Real { 1.0 - self.p_left(x) }
 }
 
 /// Trait that allows a Splitter to generate random splits
-pub trait RandomSplit<S: Splitter> {
-    fn new_random<R: Rng>(data: &[S::S], rng: &mut R) -> Option<S>;
+pub trait RandomSplit<S: Sample, SP: Splitter<S>> {
+    fn new_random<R: Rng>(data: &[S], rng: &mut R) -> Option<SP>;
 }
 
 /// Find split
-pub trait SplitFitter: Default {
-    type S: Sample;
-    type Split: Splitter<S=Self::S>;
-    type Criterion: SplitCriterion<Self::S>;
-    fn find_split(&self, data: &mut [Self::S]) -> Option<Self::Split>;
+pub trait SplitFitter<S: Sample>: Default {
+    type Split: Splitter<S>;
+    type Criterion: SplitCriterion<S>;
+    fn find_split(&self, data: &mut [S]) -> Option<Self::Split>;
 }
 
 /// Trait that allows a type to be fitted
