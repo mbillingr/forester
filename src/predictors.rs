@@ -2,6 +2,7 @@
 use std::ops;
 use std::marker::PhantomData;
 
+use super::LeafFitter;
 use super::LeafPredictor;
 use super::ProbabilisticLeafPredictor;
 use super::Real;
@@ -26,14 +27,15 @@ impl<S> ConstMean<S> {
 }
 
 impl<S: Sample<Y=Real>> LeafPredictor<S> for ConstMean<S>
-    //where S::Y: Real + Copy + iter::Sum + ops::Div<Output=S::Y>
 {
     type Output = S::Y;
 
     fn predict(&self, _x: &S::X) -> Self::Output {
         self.value
     }
+}
 
+impl<S: Sample<Y=Real>> LeafFitter<S> for ConstMean<S> {
     fn fit(data: &[S]) -> Self {
         let sum: S::Y = data.iter().map(|s| s.get_y()).sum();
         let n = data.len() as Real;
@@ -52,8 +54,9 @@ pub struct LinearRegression<T, S> {
     _p: PhantomData<S>,
 }
 
-impl<S: Sample> LeafPredictor<S> for LinearRegression<S::Y, S>
-    where S::Y: Copy + ops::Mul<Output=S::Y> + ops::Add<Output=S::Y>,
+impl<S> LeafPredictor<S> for LinearRegression<S::Y, S>
+    where S: Sample,
+          S::Y: Copy + ops::Mul<Output=S::Y> + ops::Add<Output=S::Y>,
           S::X: Dot<[S::Y], Output=S::Y>
 {
     type Output = S::Y;
@@ -62,7 +65,13 @@ impl<S: Sample> LeafPredictor<S> for LinearRegression<S::Y, S>
     fn predict(&self, x: &S::X) -> Self::Output {
         self.intercept + x.dot(&self.weights)
     }
+}
 
+impl<S> LeafFitter<S> for LinearRegression<S::Y, S>
+    where S: Sample,
+          S::Y: Copy + ops::Mul<Output=S::Y> + ops::Add<Output=S::Y>,
+          S::X: Dot<[S::Y], Output=S::Y>
+{
     fn fit(_data: &[S]) -> Self {
         unimplemented!("LinearRegression::fit()")
     }
@@ -84,7 +93,9 @@ impl<S: Sample<Y=Real>> LeafPredictor<S> for ConstGaussian<S>
     fn predict(&self, _x: &S::X) -> Self::Output {
         self.mean
     }
+}
 
+impl<S: Sample<Y=Real>> LeafFitter<S> for ConstGaussian<S> {
     fn fit(data: &[S]) -> Self {
         let mut sum = S::Y::zero();
         let mut ssum = S::Y::zero();
@@ -183,7 +194,9 @@ impl<S: Sample<Y=u8>> LeafPredictor<S> for ClassPredictor<S>
     fn predict(&self, _x: &S::X) -> Self::Output {
         self.counts.clone()
     }
+}
 
+impl<S: Sample<Y=u8>> LeafFitter<S> for ClassPredictor<S> {
     fn fit(data: &[S]) -> Self {
         let mut counts = CategoricalProbabilities::new();
 

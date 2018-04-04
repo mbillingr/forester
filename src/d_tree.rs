@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use super::DataSet;
 use super::DeterministicSplitter;
+use super::LeafFitter;
 use super::LeafPredictor;
 use super::LearnerMut;
 use super::Predictor;
@@ -97,20 +98,20 @@ impl<S, SP, LP> Predictor<S::X> for DeterministicTree<S, SP, LP>
 }
 
 #[derive(Debug)]
-pub struct DeterministicTreeBuilder<S, SF, P>
+pub struct DeterministicTreeBuilder<S, SF, LP>
     where S: Sample,
           SF: SplitFitter<S>,
-          P: LeafPredictor<S>
+          LP: LeafFitter<S> + LeafPredictor<S>,
 {
     split_finder: SF,
     min_samples_split: usize,
-    _p: PhantomData<(S, P)>
+    _p: PhantomData<(S, LP)>
 }
 
-impl<S, SF, P> DeterministicTreeBuilder<S, SF, P>
+impl<S, SF, LP> DeterministicTreeBuilder<S, SF, LP>
     where S: Sample,
           SF: SplitFitter<S>,
-          P: LeafPredictor<S>
+          LP: LeafFitter<S> + LeafPredictor<S>,
 {
     pub fn new(split_finder: SF, min_samples_split: usize) -> Self {
         DeterministicTreeBuilder {
@@ -125,7 +126,7 @@ impl<S, SF, P> DeterministicTreeBuilder<S, SF, P>
 impl<S, SF, LP> DeterministicTreeBuilder<S, SF, LP>
     where S: Sample,
           SF: SplitFitter<S>,
-          LP: LeafPredictor<S>,
+          LP: LeafFitter<S> + LeafPredictor<S>,
           SF::Split: DeterministicSplitter<S>
 {
     fn recursive_fit(&self, tree: &mut DeterministicTree<S, SF::Split, LP>, data: &mut [S], node: usize) {
@@ -149,10 +150,10 @@ impl<S, SF, LP> DeterministicTreeBuilder<S, SF, LP>
     }
 }
 
-impl<S, SF, P> Default for DeterministicTreeBuilder<S, SF, P>
+impl<S, SF, LP> Default for DeterministicTreeBuilder<S, SF, LP>
     where S: Sample,
           SF: SplitFitter<S>,
-          P: LeafPredictor<S>
+          LP: LeafFitter<S> + LeafPredictor<S>,
 {
     fn default() -> Self {
         DeterministicTreeBuilder {
@@ -166,7 +167,7 @@ impl<S, SF, P> Default for DeterministicTreeBuilder<S, SF, P>
 impl<S, SF, LP> LearnerMut<S, DeterministicTree<S, SF::Split, LP>> for DeterministicTreeBuilder<S, SF, LP>
     where S: Sample,
           SF: SplitFitter<S>,
-          LP: LeafPredictor<S>,
+          LP: LeafFitter<S> + LeafPredictor<S>,
           SF::Split: DeterministicSplitter<S>,
 {
     fn fit(&self, data: &mut [S]) -> DeterministicTree<S, SF::Split, LP> {

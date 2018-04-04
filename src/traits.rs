@@ -110,7 +110,10 @@ pub trait LeafPredictor<S: Sample> {
 
     /// predicted value
     fn predict(&self, x: &S::X) -> Self::Output;
+}
 
+/// Prediction of the final Leaf value.
+pub trait LeafFitter<S: Sample> {
     /// fit predictor to data
     fn fit(data: &[S]) -> Self;
 }
