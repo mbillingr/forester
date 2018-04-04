@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use super::DataSet;
 use super::DeterministicSplitter;
+use super::LeafFitter;
 use super::LeafPredictor;
 use super::LearnerMut;
 use super::Predictor;
@@ -13,26 +14,44 @@ use super::Splitter;
 /// A decision tree node. Can be either a split node with a Splitter and two children, or a leaf
 /// node with a LeafPredictor.
 #[derive(Debug)]
-pub enum Node<S: Splitter, L: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>>
+pub enum Node<S: Sample, SP: Splitter<S>, L: LeafPredictor<S>>
 {
-    Invalid,  // placeholder used during tree construction
-    Split{split: S, left: usize, right: usize},
+    Invalid(PhantomData<S>),  // placeholder used during tree construction
+    Split{split: SP, left: usize, right: usize},
     Leaf(L),
+}
+
+impl<S, SP, L> Node<S, SP, L>
+    where S: Sample,
+          SP: Splitter<S>,
+          L: LeafPredictor<S>
+{
+    pub fn new() -> Self {
+        Node::Invalid(PhantomData)
+    }
 }
 
 /// Generic decision tree.
 #[derive(Debug)]
-pub struct DeterministicTree<S: Splitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>>
+pub struct DeterministicTree<S: Sample, SP: Splitter<S>, LP: LeafPredictor<S>>
 {
-    pub nodes: Vec<Node<S, P>>,  // Would rather make this private, but benchmarks need to have access
+    pub nodes: Vec<Node<S, SP, LP>>,  // Would rather make this private, but benchmarks need to have access
+    _p: PhantomData<S>,
 }
 
-impl<S: Splitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> DeterministicTree<S, P> {
-    pub fn split_node(&mut self, n: usize, split: S) -> (usize, usize) {
+impl<S: Sample, SP: Splitter<S>, LP: LeafPredictor<S>> DeterministicTree<S, SP, LP> {
+    pub fn new() -> Self {
+        DeterministicTree {
+            nodes: vec![Node::Invalid(PhantomData)],
+            _p: PhantomData,
+        }
+    }
+
+    pub fn split_node(&mut self, n: usize, split: SP) -> (usize, usize) {
         let left = self.nodes.len();
         let right = left + 1;
-        self.nodes.push(Node::Invalid);
-        self.nodes.push(Node::Invalid);
+        self.nodes.push(Node::new());
+        self.nodes.push(Node::new());
         self.nodes[n] = Node::Split{split, left, right};
         (left, right)
     }
@@ -48,31 +67,17 @@ impl<S: ProbabilisticSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::
 }
 */
 
-impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Predictor<<P::S as Sample>::X, P::Output> for DeterministicTree<S, P>
+impl<S, SP, LP> Predictor<S::X> for DeterministicTree<S, SP, LP>
+    where S: Sample,
+          SP: DeterministicSplitter<S>,
+          LP: LeafPredictor<S>
 {
-/*    /// Pass a sample `x` down the tree and predict output of final leaf.
-    fn predict(&self, x: &<P::S as Sample>::X) -> P::Output {
-        let mut n = 0;
-        loop {
-            match self.nodes[n] {
-                Node::Split{ref split, left, right} => {
-                    match split.split(x) {
-                        Side::Left => n = left,
-                        Side::Right => n = right,
-                    }
-                }
-                Node::Leaf(ref l) => {
-                    return l.predict(x)
-                }
-                Node::Invalid => panic!("Invalid node found. Tree may not be fully constructed.")
-            }
-        }
-    }*/
+    type Output = LP::Output;
 
     /// Pass a sample `x` down the tree and predict output of final leaf.
-    fn predict(&self, x: &<P::S as Sample>::X) -> P::Output {
-        let start = &self.nodes[0] as *const Node<S, P>;
-        let mut node = &self.nodes[0] as *const Node<S, P>;
+    fn predict(&self, x: &S::X) -> LP::Output {
+        let start = &self.nodes[0] as *const Node<S, SP, LP>;
+        let mut node = &self.nodes[0] as *const Node<S, SP, LP>;
         unsafe {
             loop {
                 match *node {
@@ -85,7 +90,7 @@ impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::
                     Node::Leaf(ref l) => {
                         return l.predict(x)
                     }
-                    Node::Invalid => panic!("Invalid node found. Tree may not be fully constructed.")
+                    Node::Invalid(_) => panic!("Invalid node found. Tree may not be fully constructed.")
                 }
             }
         }
@@ -93,14 +98,22 @@ impl<S: DeterministicSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::
 }
 
 #[derive(Debug)]
-pub struct DeterministicTreeBuilder<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> {
-    split_finder: S,
+pub struct DeterministicTreeBuilder<S, SF, LF>
+    where S: Sample,
+          SF: SplitFitter<S>,
+          LF: LeafFitter<S>,
+{
+    split_finder: SF,
     min_samples_split: usize,
-    _p: PhantomData<(S, P)>
+    _p: PhantomData<(S, LF)>
 }
 
-impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> DeterministicTreeBuilder<S, P> {
-    pub fn new(split_finder: S, min_samples_split: usize) -> DeterministicTreeBuilder<S, P> {
+impl<S, SF, LF> DeterministicTreeBuilder<S, SF, LF>
+    where S: Sample,
+          SF: SplitFitter<S>,
+          LF: LeafFitter<S>
+{
+    pub fn new(split_finder: SF, min_samples_split: usize) -> Self {
         DeterministicTreeBuilder {
             split_finder,
             min_samples_split,
@@ -110,17 +123,20 @@ impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Determ
 }
 
 
-impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> DeterministicTreeBuilder<S, P>
-    where S::Split: DeterministicSplitter
+impl<S, SF, LF> DeterministicTreeBuilder<S, SF, LF>
+    where S: Sample,
+          SF: SplitFitter<S>,
+          LF: LeafFitter<S>,
+          SF::Split: DeterministicSplitter<S>
 {
-    fn recursive_fit(&self, tree: &mut DeterministicTree<S::Split, P>, data: &mut S::D, node: usize) {
+    fn recursive_fit(&self, tree: &mut DeterministicTree<S, SF::Split, LF::Output>, data: &mut [S], node: usize) {
         if data.n_samples() < self.min_samples_split {
-            tree.nodes[node] = Node::Leaf(P::fit(data));
+            tree.nodes[node] = Node::Leaf(LF::fit(data));
             return
         }
         let split = self.split_finder.find_split(data);
         match split {
-            None => tree.nodes[node] = Node::Leaf(P::fit(data)),
+            None => tree.nodes[node] = Node::Leaf(LF::fit(data)),
             Some(split) => {
                 let i = data.partition_by_split(&split);
                 let (left, right) = data.subsets(i);
@@ -134,21 +150,28 @@ impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Determ
     }
 }
 
-impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> Default for DeterministicTreeBuilder<S, P> {
-    fn default() -> DeterministicTreeBuilder<S, P> {
+impl<S, SF, LF> Default for DeterministicTreeBuilder<S, SF, LF>
+    where S: Sample,
+          SF: SplitFitter<S>,
+          LF: LeafFitter<S>,
+{
+    fn default() -> Self {
         DeterministicTreeBuilder {
-            split_finder: S::default(),
+            split_finder: SF::default(),
             min_samples_split: 2,
             _p: PhantomData
         }
     }
 }
 
-impl<S: SplitFitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::D>> LearnerMut<S::D, DeterministicTree<S::Split, P>> for DeterministicTreeBuilder<S, P>
-    where S::Split: DeterministicSplitter
+impl<S, SF, LF> LearnerMut<S, DeterministicTree<S, SF::Split, LF::Output>> for DeterministicTreeBuilder<S, SF, LF>
+    where S: Sample,
+          SF: SplitFitter<S>,
+          LF: LeafFitter<S>,
+          SF::Split: DeterministicSplitter<S>,
 {
-    fn fit(&self, data: &mut S::D) -> DeterministicTree<S::Split, P> {
-        let mut tree = DeterministicTree {nodes: vec![Node::Invalid]};
+    fn fit(&self, data: &mut [S]) -> DeterministicTree<S, SF::Split, LF::Output> {
+        let mut tree = DeterministicTree::new();
         self.recursive_fit(&mut tree, data, 0);
         tree
     }
@@ -172,11 +195,12 @@ mod tests {
     fn predict() {
         type Sample = TupleSample<ColumnSelect, [i32;1], f64>;
 
-        let tree: DeterministicTree<ThresholdSplitter<[Sample]>, ConstMean<_>> = DeterministicTree {
+        let tree: DeterministicTree<_, ThresholdSplitter<Sample>, ConstMean<_>> = DeterministicTree {
             nodes: vec!{
                 Node::Split{split: ThresholdSplitter::new(0, 2), left: 1, right: 2},
                 Node::Leaf(ConstMean::new(-1.0)),
-                Node::Leaf(ConstMean::new(1.0))}
+                Node::Leaf(ConstMean::new(1.0))},
+            _p: PhantomData
         };
 
         assert_eq!(tree.predict(&[-10]), -1.0);
@@ -206,7 +230,7 @@ mod tests {
             TupleSample::new([11], 5.0),
         ];
 
-        let tb: DeterministicTreeBuilder<BestRandomSplit<ThresholdSplitter<_>, VarCriterion<_>, _>, ConstMean<Sample>> = DeterministicTreeBuilder {
+        let tb: DeterministicTreeBuilder<_, BestRandomSplit<ThresholdSplitter<_>, VarCriterion<_>, _>, ConstMean<Sample>> = DeterministicTreeBuilder {
             split_finder: BestRandomSplit::new(1, thread_rng()),
             min_samples_split: 2,
             _p: PhantomData,
@@ -215,7 +239,7 @@ mod tests {
         let tree = tb.fit(&mut data);
 
         for sample in data {
-            assert_eq!(tree.predict(&sample.get_x()), sample.get_y());
+            assert_eq!(tree.predict(sample.get_x()), *sample.get_y());
         }
     }
 }

@@ -37,8 +37,8 @@ pub trait Sample {
     type FX: Feature<Self::X, Theta=Self::Theta, F=Self::F>;
     type X;
     type Y;
-    fn get_x(&self) -> Self::X;
-    fn get_y(&self) -> Self::Y;
+    fn get_x(&self) -> &Self::X;
+    fn get_y(&self) -> &Self::Y;
 }
 
 pub trait DataSet {
@@ -52,7 +52,7 @@ pub trait DataSet {
     fn n_samples(&self) -> usize;
     fn get(&self, i: usize) -> &Self::Item;
 
-    fn partition_by_split<S: DeterministicSplitter<D=Self>>(&mut self, s: &S) -> usize;
+    fn partition_by_split<S: DeterministicSplitter<Self::Item>>(&mut self, s: &S) -> usize;
 
     fn subsets(&mut self, i: usize) -> (&mut Self, &mut Self);
 
@@ -80,7 +80,7 @@ impl<S> DataSet for [S]
         &self[i]
     }
 
-    fn partition_by_split<SP: DeterministicSplitter<D=Self>>(&mut self, split: &SP) -> usize {
+    fn partition_by_split<SP: DeterministicSplitter<S>>(&mut self, split: &SP) -> usize {
         self.partition(|sample| split.split(&sample.get_x()) == Side::Left)
     }
 
@@ -98,89 +98,77 @@ impl<S> DataSet for [S]
 }
 
 /// For comparing splits
-pub trait SplitCriterion {
-    type D: ?Sized + DataSet;
-    type C: ?Sized + cmp::PartialOrd + Copy;
-    fn calc_presplit(y: &Self::D) -> Self::C;
-    fn calc_postsplit(yl: &Self::D, yr: &Self::D) -> Self::C;
+pub trait SplitCriterion<S: Sample> {
+    type C: cmp::PartialOrd + Copy;
+    fn calc_presplit(y: &[S]) -> Self::C;
+    fn calc_postsplit(yl: &[S], yr: &[S]) -> Self::C;
 }
 
 /// Prediction of the final Leaf value.
-pub trait LeafPredictor
-{
+pub trait LeafPredictor<S: Sample> {
     type Output;
-    type S: Sample;
-    type D: ?Sized + DataSet;
 
     /// predicted value
-    fn predict(&self, s: &<Self::S as Sample>::X) -> Self::Output;
+    fn predict(&self, x: &S::X) -> Self::Output;
+}
 
+/// Prediction of the final Leaf value.
+pub trait LeafFitter<S: Sample> {
+    type Output: LeafPredictor<S>;
     /// fit predictor to data
-    fn fit(data: &Self::D) -> Self;
+    fn fit(data: &[S]) -> Self::Output;
 }
 
 /// The probabilistic leaf predictor models uncertainty in the prediction.
-pub trait ProbabilisticLeafPredictor: LeafPredictor
-{
+pub trait ProbabilisticLeafPredictor<S: Sample>: LeafPredictor<S> {
     /// probability of given output `p(y|x)`
-    fn prob(&self, s: &Self::S) -> Real;
-}
-
-/// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
-pub trait Splitter {
-    type D: ?Sized + DataSet;
-    fn theta(&self) -> &<Self::D as DataSet>::Theta;
-}
-
-/// Assigns a sample to either side of the split.
-pub trait DeterministicSplitter: Splitter {
-    //fn split(&self, f: &<Self::F as FeatureSet>::Sample::Output) -> Side;
-    fn split(&self, x: &<Self::D as DataSet>::X) -> Side;
-}
-
-/// Assigns a sample to both sides of the split with some probability each.
-pub trait ProbabilisticSplitter: Splitter {
-    /// Probability that the sample belongs to the left side of the split
-    fn p_left(&self, x: &<Self::D as DataSet>::X) -> Real;
-
-    /// Probability that the sample belongs to the right side of the split
-    fn p_right(&self, x: &<Self::D as DataSet>::X) -> Real { 1.0 - self.p_left(x) }
-}
-
-/// Trait that allows a Splitter to generate random splits
-pub trait RandomSplit<S: Splitter> {
-    fn new_random<R: Rng>(data: &S::D, rng: &mut R) -> Option<S>;
-}
-
-/// Find split
-pub trait SplitFitter: Default {
-    type D: ?Sized + DataSet;
-    type Split: Splitter<D=Self::D>;
-    type Criterion: SplitCriterion<D=Self::D>;
-    fn find_split(&self, data: &mut Self::D) -> Option<Self::Split>;
-}
-
-/// Trait that allows a type to be fitted
-pub trait Learner<D: ?Sized + DataSet, Output=Self>: Default {
-    fn fit(&self, data: &D) -> Output;
-}
-
-/// Trait that allows a type to mutate the data set while being fitted
-pub trait LearnerMut<D: ?Sized + DataSet, Output=Self>: Default {
-    fn fit(&self, data: &mut D) -> Output;
-}
-
-/// Trait that allows a type to predict values
-pub trait Predictor<X, Y> {
-    fn predict(&self, s: &X) -> Y;
-}
-
-/// Trait that estimates the (posterior) probability of a sample.
-pub trait ProbabilisticPredictor<S> {
     fn prob(&self, s: &S) -> Real;
 }
 
-pub trait CategoricalProbability<T> {
-    const N: usize;
-    fn prob(&self);
+/// Splits data at a tree node. This is a marker trait, shared by more specialized Splitters.
+pub trait Splitter<S: Sample> {
+    fn theta(&self) -> &S::Theta;
+}
+
+/// Assigns a sample to either side of the split.
+pub trait DeterministicSplitter<S: Sample>: Splitter<S> {
+    //fn split(&self, f: &<Self::F as FeatureSet>::Sample::Output) -> Side;
+    fn split(&self, x: &S::X) -> Side;
+}
+
+/// Assigns a sample to both sides of the split with some probability each.
+pub trait ProbabilisticSplitter<S: Sample>: Splitter<S> {
+    /// Probability that the sample belongs to the left side of the split
+    fn p_left(&self, x: &S::X) -> Real;
+
+    /// Probability that the sample belongs to the right side of the split
+    fn p_right(&self, x: &S::X) -> Real { 1.0 - self.p_left(x) }
+}
+
+/// Trait that allows a Splitter to generate random splits
+pub trait RandomSplit<S: Sample, SP: Splitter<S>> {
+    fn new_random<R: Rng>(data: &[S], rng: &mut R) -> Option<SP>;
+}
+
+/// Find split
+pub trait SplitFitter<S: Sample>: Default {
+    type Split: Splitter<S>;
+    type Criterion: SplitCriterion<S>;
+    fn find_split(&self, data: &mut [S]) -> Option<Self::Split>;
+}
+
+/// Trait that allows a type to be fitted
+pub trait Learner<S: Sample, Output=Self>: Default {
+    fn fit(&self, data: &[S]) -> Output;
+}
+
+/// Trait that allows a type to mutate the data set while being fitted
+pub trait LearnerMut<S: Sample, Output=Self>: Default {
+    fn fit(&self, data: &mut [S]) -> Output;
+}
+
+/// Trait that allows a type to predict values
+pub trait Predictor<X> {
+    type Output;
+    fn predict(&self, s: &X) -> Self::Output;
 }

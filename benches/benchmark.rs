@@ -15,20 +15,20 @@ use forester::LearnerMut;
 const N: usize = 100;
 const M: usize = 30;
 
-static mut g_data: Option<Vec<f64>> = None;
+static mut G_DATA: Option<Vec<f64>> = None;
 
 fn get_data() -> &'static Vec<f64> {
     unsafe {
-        match g_data {
+        match G_DATA {
             Some(ref d) => return d,
             None => { }
         }
         let mut x = Vec::with_capacity(N*M);
-        for i in 0..N*M {
+        for _ in 0..N*M {
             x.push(thread_rng().gen());
         }
-        g_data = Some(x);
-        g_data.as_ref().unwrap()
+        G_DATA = Some(x);
+        G_DATA.as_ref().unwrap()
     }
 }
 
@@ -68,21 +68,21 @@ fn gen_data_ref() -> Vec<Sample<&'static [f64], f64>> {
 fn array_data(c: &mut Criterion) {
     let mut data = gen_data_array();
     c.bench_function("array_data", move |b| b.iter(|| {
-        let model = TreeBuilder::default().fit(&mut data);
+        TreeBuilder::default().fit(&mut data);
     }));
 }
 
 fn vec_data(c: &mut Criterion) {
     let mut data = gen_data_vec();
     c.bench_function("vec_data", move |b| b.iter(|| {
-        let model = TreeBuilder::default().fit(&mut data);
+        TreeBuilder::default().fit(&mut data);
     }));
 }
 
 fn ref_data(c: &mut Criterion) {
     let mut data = gen_data_ref();
     c.bench_function("ref_data", move |b| b.iter(|| {
-        let model = TreeBuilder::default().fit(&mut data);
+        TreeBuilder::default().fit(&mut data);
     }));
 }
 
