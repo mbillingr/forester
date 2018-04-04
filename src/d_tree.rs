@@ -98,20 +98,20 @@ impl<S, SP, LP> Predictor<S::X> for DeterministicTree<S, SP, LP>
 }
 
 #[derive(Debug)]
-pub struct DeterministicTreeBuilder<S, SF, LP>
+pub struct DeterministicTreeBuilder<S, SF, LF>
     where S: Sample,
           SF: SplitFitter<S>,
-          LP: LeafFitter<S> + LeafPredictor<S>,
+          LF: LeafFitter<S>,
 {
     split_finder: SF,
     min_samples_split: usize,
-    _p: PhantomData<(S, LP)>
+    _p: PhantomData<(S, LF)>
 }
 
-impl<S, SF, LP> DeterministicTreeBuilder<S, SF, LP>
+impl<S, SF, LF> DeterministicTreeBuilder<S, SF, LF>
     where S: Sample,
           SF: SplitFitter<S>,
-          LP: LeafFitter<S> + LeafPredictor<S>,
+          LF: LeafFitter<S>
 {
     pub fn new(split_finder: SF, min_samples_split: usize) -> Self {
         DeterministicTreeBuilder {
@@ -123,20 +123,20 @@ impl<S, SF, LP> DeterministicTreeBuilder<S, SF, LP>
 }
 
 
-impl<S, SF, LP> DeterministicTreeBuilder<S, SF, LP>
+impl<S, SF, LF> DeterministicTreeBuilder<S, SF, LF>
     where S: Sample,
           SF: SplitFitter<S>,
-          LP: LeafFitter<S> + LeafPredictor<S>,
+          LF: LeafFitter<S>,
           SF::Split: DeterministicSplitter<S>
 {
-    fn recursive_fit(&self, tree: &mut DeterministicTree<S, SF::Split, LP>, data: &mut [S], node: usize) {
+    fn recursive_fit(&self, tree: &mut DeterministicTree<S, SF::Split, LF::Output>, data: &mut [S], node: usize) {
         if data.n_samples() < self.min_samples_split {
-            tree.nodes[node] = Node::Leaf(LP::fit(data));
+            tree.nodes[node] = Node::Leaf(LF::fit(data));
             return
         }
         let split = self.split_finder.find_split(data);
         match split {
-            None => tree.nodes[node] = Node::Leaf(LP::fit(data)),
+            None => tree.nodes[node] = Node::Leaf(LF::fit(data)),
             Some(split) => {
                 let i = data.partition_by_split(&split);
                 let (left, right) = data.subsets(i);
@@ -150,10 +150,10 @@ impl<S, SF, LP> DeterministicTreeBuilder<S, SF, LP>
     }
 }
 
-impl<S, SF, LP> Default for DeterministicTreeBuilder<S, SF, LP>
+impl<S, SF, LF> Default for DeterministicTreeBuilder<S, SF, LF>
     where S: Sample,
           SF: SplitFitter<S>,
-          LP: LeafFitter<S> + LeafPredictor<S>,
+          LF: LeafFitter<S>,
 {
     fn default() -> Self {
         DeterministicTreeBuilder {
@@ -164,13 +164,13 @@ impl<S, SF, LP> Default for DeterministicTreeBuilder<S, SF, LP>
     }
 }
 
-impl<S, SF, LP> LearnerMut<S, DeterministicTree<S, SF::Split, LP>> for DeterministicTreeBuilder<S, SF, LP>
+impl<S, SF, LF> LearnerMut<S, DeterministicTree<S, SF::Split, LF::Output>> for DeterministicTreeBuilder<S, SF, LF>
     where S: Sample,
           SF: SplitFitter<S>,
-          LP: LeafFitter<S> + LeafPredictor<S>,
+          LF: LeafFitter<S>,
           SF::Split: DeterministicSplitter<S>,
 {
-    fn fit(&self, data: &mut [S]) -> DeterministicTree<S, SF::Split, LP> {
+    fn fit(&self, data: &mut [S]) -> DeterministicTree<S, SF::Split, LF::Output> {
         let mut tree = DeterministicTree::new();
         self.recursive_fit(&mut tree, data, 0);
         tree

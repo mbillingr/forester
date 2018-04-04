@@ -21,16 +21,17 @@ pub mod extra_trees_regressor {
 
     pub type Model<X, Y> = Ensemble<X, Y, Tree<X, Y>>;
 
-    pub type TreeBuilder<X, Y> = DeterministicTreeBuilder<Sample<X, Y>, SplitFitter<X, Y>, Predictor<X, Y>>;
+    pub type TreeBuilder<X, Y> = DeterministicTreeBuilder<Sample<X, Y>, SplitFitter<X, Y>, LeafFitter<X, Y>>;
 
-    pub type Tree<X, Y> = DeterministicTree<Sample<X, Y>, Splitter<X, Y>, Predictor<X, Y>>;
+    pub type Tree<X, Y> = DeterministicTree<Sample<X, Y>, Splitter<X, Y>, LeafPredictor<X, Y>>;
 
     //pub type Data<X, Y> = [Sample<X, Y>];
     pub type Sample<X, Y> = TupleSample<Features, X, Y>;
 
     pub type SplitFitter<X, Y> = BestRandomSplit<Splitter<X, Y>, SplitCriterion<X, Y>, ThreadRng>;
     pub type Splitter<X, Y> = ThresholdSplitter<Sample<X, Y>>;
-    pub type Predictor<X, Y> =  ConstMean<Sample<X, Y>>;
+    pub type LeafFitter<X, Y> =  ConstMean<Sample<X, Y>>;
+    pub type LeafPredictor<X, Y> =  ConstMean<Sample<X, Y>>;
     pub type Features = ColumnSelect;
     pub type SplitCriterion<X, Y> = VarCriterion<Sample<X, Y>>;
 
@@ -99,9 +100,9 @@ pub mod extra_trees_classifier {
 
     pub type Model<X> = Ensemble<X, CategoricalProbabilities, Tree<X>>;
 
-    pub type TreeBuilder<X> = DeterministicTreeBuilder<Sample<X>, SplitFitter<X>, Predictor<X>>;
+    pub type TreeBuilder<X> = DeterministicTreeBuilder<Sample<X>, SplitFitter<X>, LeafFitter<X>>;
 
-    pub type Tree<X> = DeterministicTree<Sample<X>, Splitter<X>, Predictor<X>>;
+    pub type Tree<X> = DeterministicTree<Sample<X>, Splitter<X>, LeafPredictor<X>>;
 
     //pub type Data<X> = [Sample<X>];
     pub type Sample<X> = TupleSample<Features, X, Y>;
@@ -109,7 +110,8 @@ pub mod extra_trees_classifier {
 
     pub type SplitFitter<X> = BestRandomSplit<Splitter<X>, SplitCriterion<X>, ThreadRng>;
     pub type Splitter<X> = ThresholdSplitter<Sample<X>>;
-    pub type Predictor<X> =  ClassPredictor<Sample<X>>;
+    pub type LeafFitter<X> =  ClassPredictor<Sample<X>>;
+    pub type LeafPredictor<X> =  ClassPredictor<Sample<X>>;
     pub type Features = ColumnSelect;
     pub type SplitCriterion<X> = GiniCriterion<Sample<X>>;
 

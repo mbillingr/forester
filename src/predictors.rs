@@ -36,6 +36,8 @@ impl<S: Sample<Y=Real>> LeafPredictor<S> for ConstMean<S>
 }
 
 impl<S: Sample<Y=Real>> LeafFitter<S> for ConstMean<S> {
+    type Output = ConstMean<S>;
+
     fn fit(data: &[S]) -> Self {
         let sum: S::Y = data.iter().map(|s| s.get_y()).sum();
         let n = data.len() as Real;
@@ -72,6 +74,8 @@ impl<S> LeafFitter<S> for LinearRegression<S::Y, S>
           S::Y: Copy + ops::Mul<Output=S::Y> + ops::Add<Output=S::Y>,
           S::X: Dot<[S::Y], Output=S::Y>
 {
+    type Output = LinearRegression<S::Y, S>;
+
     fn fit(_data: &[S]) -> Self {
         unimplemented!("LinearRegression::fit()")
     }
@@ -96,6 +100,8 @@ impl<S: Sample<Y=Real>> LeafPredictor<S> for ConstGaussian<S>
 }
 
 impl<S: Sample<Y=Real>> LeafFitter<S> for ConstGaussian<S> {
+    type Output = ConstGaussian<S>;
+
     fn fit(data: &[S]) -> Self {
         let mut sum = S::Y::zero();
         let mut ssum = S::Y::zero();
@@ -188,7 +194,6 @@ pub struct ClassPredictor<S> {
 
 impl<S: Sample<Y=u8>> LeafPredictor<S> for ClassPredictor<S>
 {
-
     type Output = CategoricalProbabilities;
 
     fn predict(&self, _x: &S::X) -> Self::Output {
@@ -197,6 +202,8 @@ impl<S: Sample<Y=u8>> LeafPredictor<S> for ClassPredictor<S>
 }
 
 impl<S: Sample<Y=u8>> LeafFitter<S> for ClassPredictor<S> {
+    type Output = ClassPredictor<S>;
+
     fn fit(data: &[S]) -> Self {
         let mut counts = CategoricalProbabilities::new();
 

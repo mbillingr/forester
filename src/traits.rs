@@ -114,8 +114,9 @@ pub trait LeafPredictor<S: Sample> {
 
 /// Prediction of the final Leaf value.
 pub trait LeafFitter<S: Sample> {
+    type Output: LeafPredictor<S>;
     /// fit predictor to data
-    fn fit(data: &[S]) -> Self;
+    fn fit(data: &[S]) -> Self::Output;
 }
 
 /// The probabilistic leaf predictor models uncertainty in the prediction.
