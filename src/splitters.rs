@@ -125,7 +125,7 @@ impl<S, C, R: DefaultRng> Default for BestRandomSplit<S, C, R> {
 }
 
 // this specialized for float 64 criteria... this is not really necessary, but allows an optimization
-impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<S=S::S, C=f64>, R: DefaultRng> SplitFitter for BestRandomSplit<S, C, R>
+impl<S: DeterministicSplitter + RandomSplit<S>, C: SplitCriterion<S::S, C=f64>, R: DefaultRng> SplitFitter for BestRandomSplit<S, C, R>
 {
     type S = S::S;
     type Split = S;

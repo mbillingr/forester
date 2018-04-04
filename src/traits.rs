@@ -98,11 +98,10 @@ impl<S> DataSet for [S]
 }
 
 /// For comparing splits
-pub trait SplitCriterion {
-    type S: Sample;
+pub trait SplitCriterion<S: Sample> {
     type C: cmp::PartialOrd + Copy;
-    fn calc_presplit(y: &[Self::S]) -> Self::C;
-    fn calc_postsplit(yl: &[Self::S], yr: &[Self::S]) -> Self::C;
+    fn calc_presplit(y: &[S]) -> Self::C;
+    fn calc_postsplit(yl: &[S], yr: &[S]) -> Self::C;
 }
 
 /// Prediction of the final Leaf value.
@@ -154,7 +153,7 @@ pub trait RandomSplit<S: Splitter> {
 pub trait SplitFitter: Default {
     type S: Sample;
     type Split: Splitter<S=Self::S>;
-    type Criterion: SplitCriterion<S=Self::S>;
+    type Criterion: SplitCriterion<Self::S>;
     fn find_split(&self, data: &mut [Self::S]) -> Option<Self::Split>;
 }
 
