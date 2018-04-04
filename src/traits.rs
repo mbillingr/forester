@@ -170,6 +170,7 @@ pub trait LearnerMut<S: Sample, Output=Self>: Default {
 }
 
 /// Trait that allows a type to predict values
-pub trait Predictor<X, Y> {
-    fn predict(&self, s: &X) -> Y;
+pub trait Predictor<X> {
+    type Output;
+    fn predict(&self, s: &X) -> Self::Output;
 }

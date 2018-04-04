@@ -49,8 +49,10 @@ impl<S: ProbabilisticSplitter, P: LeafPredictor<S=<S::D as DataSet>::Item, D=S::
 }
 */
 
-impl<S: Sample, SP: DeterministicSplitter<S=S>, LP: LeafPredictor<S=S>> Predictor<S::X, LP::Output> for DeterministicTree<S, SP, LP>
+impl<S: Sample, SP: DeterministicSplitter<S=S>, LP: LeafPredictor<S=S>> Predictor<S::X> for DeterministicTree<S, SP, LP>
 {
+    type Output = LP::Output;
+
     /// Pass a sample `x` down the tree and predict output of final leaf.
     fn predict(&self, x: &<LP::S as Sample>::X) -> LP::Output {
         let start = &self.nodes[0] as *const Node<SP, LP>;
