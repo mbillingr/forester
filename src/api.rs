@@ -23,7 +23,7 @@ pub mod extra_trees_regressor {
 
     pub type TreeBuilder<X, Y> = DeterministicTreeBuilder<SplitFitter<X, Y>, Predictor<X, Y>>;
 
-    pub type Tree<X, Y> = DeterministicTree<Splitter<X, Y>, Predictor<X, Y>>;
+    pub type Tree<X, Y> = DeterministicTree<Sample<X, Y>, Splitter<X, Y>, Predictor<X, Y>>;
 
     //pub type Data<X, Y> = [Sample<X, Y>];
     pub type Sample<X, Y> = TupleSample<Features, X, Y>;
@@ -101,7 +101,7 @@ pub mod extra_trees_classifier {
 
     pub type TreeBuilder<X> = DeterministicTreeBuilder<SplitFitter<X>, Predictor<X>>;
 
-    pub type Tree<X> = DeterministicTree<Splitter<X>, Predictor<X>>;
+    pub type Tree<X> = DeterministicTree<Sample<X>, Splitter<X>, Predictor<X>>;
 
     //pub type Data<X> = [Sample<X>];
     pub type Sample<X> = TupleSample<Features, X, Y>;
