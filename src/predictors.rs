@@ -11,12 +11,12 @@ use super::Sample;
 use array_ops::Dot;
 
 #[derive(Debug)]
-pub struct ConstMean<S: ?Sized> {
+pub struct ConstMean<S> {
     value: Real,
     _p: PhantomData<S>,
 }
 
-impl<S: ?Sized> ConstMean<S> {
+impl<S> ConstMean<S> {
     pub fn new(value: Real) -> Self {
         ConstMean {
             value,
@@ -46,7 +46,7 @@ impl<S: Sample<Y=Real>> LeafPredictor<S> for ConstMean<S>
 
 /// Linear regression with intercept
 #[derive(Debug)]
-pub struct LinearRegression<T, S: ?Sized> {
+pub struct LinearRegression<T, S> {
     intercept: T,
     weights: Vec<T>,
     _p: PhantomData<S>,
@@ -69,7 +69,7 @@ impl<S: Sample> LeafPredictor<S> for LinearRegression<S::Y, S>
 }
 
 #[derive(Debug)]
-pub struct ConstGaussian<S: ?Sized> {
+pub struct ConstGaussian<S> {
     mean: Real,
     variance: Real,
 
@@ -170,7 +170,7 @@ impl CategoricalProbabilities {
 }
 
 #[derive(Debug)]
-pub struct ClassPredictor<S: ?Sized> {
+pub struct ClassPredictor<S> {
     counts: CategoricalProbabilities,
     _p: PhantomData<S>,
 }

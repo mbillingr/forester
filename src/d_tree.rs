@@ -20,6 +20,16 @@ pub enum Node<S: Sample, SP: Splitter<S>, L: LeafPredictor<S>>
     Leaf(L),
 }
 
+impl<S, SP, L> Node<S, SP, L>
+    where S: Sample,
+          SP: Splitter<S>,
+          L: LeafPredictor<S>
+{
+    pub fn new() -> Self {
+        Node::Invalid(PhantomData)
+    }
+}
+
 /// Generic decision tree.
 #[derive(Debug)]
 pub struct DeterministicTree<S: Sample, SP: Splitter<S>, LP: LeafPredictor<S>>
@@ -29,11 +39,18 @@ pub struct DeterministicTree<S: Sample, SP: Splitter<S>, LP: LeafPredictor<S>>
 }
 
 impl<S: Sample, SP: Splitter<S>, LP: LeafPredictor<S>> DeterministicTree<S, SP, LP> {
+    pub fn new() -> Self {
+        DeterministicTree {
+            nodes: vec![Node::Invalid(PhantomData)],
+            _p: PhantomData,
+        }
+    }
+
     pub fn split_node(&mut self, n: usize, split: SP) -> (usize, usize) {
         let left = self.nodes.len();
         let right = left + 1;
-        self.nodes.push(Node::Invalid(PhantomData));
-        self.nodes.push(Node::Invalid(PhantomData));
+        self.nodes.push(Node::new());
+        self.nodes.push(Node::new());
         self.nodes[n] = Node::Split{split, left, right};
         (left, right)
     }
@@ -153,10 +170,7 @@ impl<S, SF, LP> LearnerMut<S, DeterministicTree<S, SF::Split, LP>> for Determini
           SF::Split: DeterministicSplitter<S>,
 {
     fn fit(&self, data: &mut [S]) -> DeterministicTree<S, SF::Split, LP> {
-        let mut tree = DeterministicTree {
-            nodes: vec![Node::Invalid(PhantomData)],
-            _p: PhantomData,
-        };
+        let mut tree = DeterministicTree::new();
         self.recursive_fit(&mut tree, data, 0);
         tree
     }

@@ -14,8 +14,8 @@ use forester::datasets::TupleSample;
 use forester::traits::Side;
 use forester::{DeterministicSplitter, LeafPredictor, Predictor as PT};
 
-pub type Tree = DeterministicTree<Splitter, Predictor>;
-pub type Splitter = ThresholdSplitter<[Sample]>;
+pub type Tree = DeterministicTree<Sample, Splitter, Predictor>;
+pub type Splitter = ThresholdSplitter<Sample>;
 pub type Predictor =  ConstMean<Sample>;
 pub type Sample = TupleSample<ColumnSelect, [u32; 1], f64>;
 
@@ -32,7 +32,7 @@ fn safe_predict(tree: &Tree, x: &[u32; 1]) -> f64 {
             Node::Leaf(ref l) => {
                 return l.predict(x)
             }
-            Node::Invalid => panic!("Invalid node found. Tree may not be fully constructed.")
+            Node::Invalid(_) => panic!("Invalid node found. Tree may not be fully constructed.")
         }
     }
 }
@@ -40,7 +40,7 @@ fn safe_predict(tree: &Tree, x: &[u32; 1]) -> f64 {
 
 fn build_tree(max_depth: u32) -> Tree {
     let range: (u32, u32) = (0, 2u32.pow(max_depth));
-    let mut tree = DeterministicTree {nodes: vec![Node::Invalid]};
+    let mut tree = DeterministicTree::new();
     build_tree_recursive(&mut tree, max_depth, 0, range);
     tree
 }
@@ -56,8 +56,8 @@ fn build_tree_recursive(tree: &mut Tree, depth: u32, node: usize, range: (u32, u
 
     let left = tree.nodes.len();
     let right = left + 1;
-    tree.nodes.push(Node::Invalid);
-    tree.nodes.push(Node::Invalid);
+    tree.nodes.push(Node::new());
+    tree.nodes.push(Node::new());
     tree.nodes[node] = Node::Split{split: Splitter::new(0, c), left, right};
 
     build_tree_recursive(tree, depth - 1, left, (a, c));
