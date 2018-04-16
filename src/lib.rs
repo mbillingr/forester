@@ -7,6 +7,7 @@ pub mod datasets;
 pub mod features;
 pub mod ensemble;
 pub mod get_item;
+pub mod iter_mean;
 pub mod predictors;
 pub mod random;
 pub mod splitters;
@@ -22,6 +23,7 @@ pub use traits::*;
 use std::marker::PhantomData;
 use rand::{thread_rng, Rng};
 use array_ops::Partition;
+use iter_mean::IterMean;
 
 pub struct Split<Theta, Threshold> {
     theta: Theta,
@@ -185,6 +187,53 @@ impl<Sample> DeterministicTree<Sample>
 }
 
 
+pub struct BestRandomSplit {
+    n_splits: usize,
+}
+
+impl SplitFinder for BestRandomSplit
+{
+    fn find_split<Sample, Training>(&self, data: &mut Training) -> Option<Split<Sample::ThetaSplit, Sample::Feature>>
+        where Sample: SampleDescription,
+              Training: ?Sized + TrainingData<Sample>
+    {
+        let n = data.n_samples() as f64;
+        let mut best_criterion = data.split_criterion();
+        let mut best_split = None;
+
+        let mut rng = thread_rng();
+
+        for _ in 0..self.n_splits {
+            let theta = data.gen_split_feature();
+
+            let (min, max) = data.feature_bounds(&theta);
+
+            let threshold = rng.gen_range(min, max);
+
+            let split = Split{theta, threshold};
+            let (left, right) = data.partition_data(&split);
+
+            let left_crit = left.split_criterion() * left.n_samples() as f64;
+            let right_crit = right.split_criterion()* right.n_samples() as f64;
+            let criterion = (left_crit + right_crit) / n;
+
+            if criterion <= best_criterion {
+                best_criterion = criterion;
+                best_split = Some(split);
+            }
+
+            // stop early if we find a perfect split
+            // TODO: tolerance rather than exact comparison
+            if best_criterion == 0.0 {
+                break
+            }
+        }
+
+        best_split
+    }
+}
+
+
 pub struct DeterministicTreeBuilder<SF, Sample>
     where SF: SplitFinder,
           Sample: SampleDescription,
@@ -251,49 +300,56 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
 }
 
 
-pub struct BestRandomSplit {
-    n_splits: usize,
+pub struct DeterministicForest<Sample>
+    where Sample: SampleDescription
+{
+    estimators: Vec<DeterministicTree<Sample>>
 }
 
-impl SplitFinder for BestRandomSplit
+
+
+impl<Sample> DeterministicForest<Sample>
+    where Sample: SampleDescription
 {
-    fn find_split<Sample, Training>(&self, data: &mut Training) -> Option<Split<Sample::ThetaSplit, Sample::Feature>>
-        where Sample: SampleDescription,
-              Training: ?Sized + TrainingData<Sample>
+    // Making the predict function generic allows the user to pass in any sample that's compatible
+    // with the tree's sample type
+    pub fn predict<TestingSample>(&self, sample: &TestingSample) -> TestingSample::Prediction
+        where TestingSample: SampleDescription<ThetaSplit=Sample::ThetaSplit,
+                                               ThetaLeaf=Sample::ThetaLeaf,
+                                               Feature=Sample::Feature>,
+              TestingSample::Prediction: IterMean,
     {
-        let n = data.n_samples() as f64;
-        let mut best_criterion = data.split_criterion();
-        let mut best_split = None;
+        let iter = self.estimators
+            .iter()
+            .map(|tree| tree.predict(sample));
+        TestingSample::Prediction::mean(iter)
+    }
+}
 
-        let mut rng = thread_rng();
 
-        for _ in 0..self.n_splits {
-            let theta = data.gen_split_feature();
+pub struct DeterministicForestBuilder<SF, Sample>
+    where SF: SplitFinder,
+          Sample: SampleDescription,
+{
+    n_estimators: usize,
+    tree_builder: DeterministicTreeBuilder<SF, Sample>,
+}
 
-            let (min, max) = data.feature_bounds(&theta);
-
-            let threshold = rng.gen_range(min, max);
-
-            let split = Split{theta, threshold};
-            let (left, right) = data.partition_data(&split);
-
-            let left_crit = left.split_criterion() * left.n_samples() as f64;
-            let right_crit = right.split_criterion()* right.n_samples() as f64;
-            let criterion = (left_crit + right_crit) / n;
-
-            if criterion <= best_criterion {
-                best_criterion = criterion;
-                best_split = Some(split);
-            }
-
-            // stop early if we find a perfect split
-            // TODO: tolerance rather than exact comparison
-            if best_criterion == 0.0 {
-                break
-            }
+impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
+    where SF: SplitFinder,
+          Sample: SampleDescription
+{
+    pub fn fit<Training>(&self, data: &mut Training) -> DeterministicForest<Sample>
+        where Training: ?Sized + TrainingData<Sample>
+    {
+        let mut estimators = Vec::with_capacity(self.n_estimators);
+        for _ in 0..self.n_estimators {
+            estimators.push(self.tree_builder.fit(data));
         }
 
-        best_split
+        DeterministicForest {
+            estimators
+        }
     }
 }
 
