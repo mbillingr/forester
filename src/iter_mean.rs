@@ -1,6 +1,6 @@
 use std::iter::Sum;
 
-trait IterMean<A=Self>: Sum
+pub trait IterMean<A=Self>: Sum
 {
     fn mean<I: ExactSizeIterator<Item=A>>(iter: I) -> Self;
 }
