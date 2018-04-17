@@ -26,8 +26,8 @@ use array_ops::Partition;
 use iter_mean::IterMean;
 
 pub struct Split<Theta, Threshold> {
-    theta: Theta,
-    threshold: Threshold,
+    pub theta: Theta,
+    pub threshold: Threshold,
 }
 
 /// Trait for a dataset that can be used for training a decision tree
@@ -191,6 +191,14 @@ pub struct BestRandomSplit {
     n_splits: usize,
 }
 
+impl BestRandomSplit {
+    pub fn new(n_splits: usize) -> Self {
+        BestRandomSplit {
+            n_splits
+        }
+    }
+}
+
 impl SplitFinder for BestRandomSplit
 {
     fn find_split<Sample, Training>(&self, data: &mut Training) -> Option<Split<Sample::ThetaSplit, Sample::Feature>>
@@ -247,6 +255,14 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
     where SF: SplitFinder,
           Sample: SampleDescription
 {
+    pub fn new(min_samples_split: usize, split_finder: SF) -> Self {
+        DeterministicTreeBuilder {
+            min_samples_split,
+            split_finder,
+            _p: PhantomData,
+        }
+    }
+
     pub fn fit<Training>(&self, data: &mut Training) -> DeterministicTree<Sample>
         where Training: ?Sized + TrainingData<Sample>
     {
@@ -339,6 +355,13 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
     where SF: SplitFinder,
           Sample: SampleDescription
 {
+    pub fn new(n_estimators: usize, tree_builder: DeterministicTreeBuilder<SF, Sample>) -> Self {
+        DeterministicForestBuilder {
+            n_estimators,
+            tree_builder,
+        }
+    }
+
     pub fn fit<Training>(&self, data: &mut Training) -> DeterministicForest<Sample>
         where Training: ?Sized + TrainingData<Sample>
     {
