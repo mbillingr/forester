@@ -1,4 +1,3 @@
-use std::iter::Sum;
 
 pub trait IterMean<A=Self>
 {
