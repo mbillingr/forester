@@ -1,34 +1,134 @@
 extern crate forester;
-extern crate gnuplot;
 extern crate image;
 extern crate rand;
 
 use std::f64::consts::PI;
 use std::fs::File;
+use std::iter::Sum;
 
-use rand::{thread_rng, Rng, ThreadRng};
+use rand::{thread_rng, Rng};
 
-use forester::traits::{LearnerMut, Predictor};
-use forester::criteria::GiniCriterion;
-use forester::datasets::TupleSample;
-use forester::d_tree::DeterministicTree;
-use forester::d_tree::DeterministicTreeBuilder;
-use forester::ensemble::EnsembleBuilder;
-use forester::features::Mix2;
-use forester::predictors::CategoricalProbabilities;
-use forester::predictors::ClassPredictor;
-use forester::splitters::BestRandomSplit;
-use forester::splitters::ThresholdSplitter;
+use forester::{
+    BestRandomSplit,
+    DeterministicForestBuilder,
+    DeterministicTreeBuilder,
+    SampleDescription,
+    Split,
+    TrainingData};
+use forester::array_ops::Partition;
+use forester::iter_mean::IterMean;
 
-//use forester::api::extra_trees_classifier::{ExtraTreesClassifier, Sample};
+// TODO: Some of this structs/impls should likely go into the library
 
-pub type Sample = TupleSample<Mix2, [f64; 2], u8>;
-pub type SplitFitter = BestRandomSplit<ThresholdSplitter<[Sample]>, GiniCriterion<Sample>, ThreadRng>;
-pub type Tree = DeterministicTree<ThresholdSplitter<[Sample]>, ClassPredictor<Sample>>;
-pub type TreeBuilder = DeterministicTreeBuilder<SplitFitter, ClassPredictor<Sample>>;
-pub type Builder = EnsembleBuilder<CategoricalProbabilities, [Sample], TreeBuilder, Tree>;
+#[derive(Copy, Clone)]
+enum Classes {
+    Red,
+    Green,
+    Blue,
+}
 
-const N_CLASSES: u8 = 3;
+#[derive(Clone)]
+struct ClassCounts {
+    p: [usize; 3],
+}
+
+impl ClassCounts {
+    fn new() -> Self {
+        ClassCounts {
+            p: [0; 3]
+        }
+    }
+
+    fn add(&mut self, c: Classes) {
+        self.p[c as usize] += 1;
+    }
+
+    fn prob(&self, c: Classes) -> f64{
+        self.p[c as usize] as f64 / self.p.iter().sum::<usize>() as f64
+    }
+}
+
+impl<'a> Sum<&'a Classes> for ClassCounts {
+    fn sum<I: Iterator<Item=&'a Classes>>(iter: I) -> Self {
+        let mut counts = ClassCounts::new();
+        for c in iter {
+            counts.add(*c);
+        }
+        counts
+    }
+}
+
+impl IterMean<ClassCounts> for ClassCounts {
+    fn mean<I: ExactSizeIterator<Item=ClassCounts>>(iter: I) -> Self {
+        let mut total_counts = ClassCounts::new();
+        for c in iter {
+            for (a, b) in total_counts.p.iter_mut().zip(c.p.iter()) {
+                *a += *b;
+            }
+        }
+        total_counts
+    }
+}
+
+struct Sample<Y> {
+    x: [f64; 2],
+    y: Y,
+}
+
+impl<Y> SampleDescription for Sample<Y> {
+    type ThetaSplit = (f64, f64);
+    type ThetaLeaf = ClassCounts;
+    type Feature = f64;
+    type Prediction = ClassCounts;
+
+    fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+        self.x[0] * theta.0 + self.x[1] * theta.1
+    }
+
+    fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+        w.clone()
+    }
+}
+
+impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
+    fn n_samples(&self) -> usize {
+        self.len()
+    }
+
+    fn gen_split_feature(&self) -> (f64, f64) {
+        let a: f64 = thread_rng().gen::<f64>() * PI;
+        (a.sin(), a.cos())
+    }
+
+    fn train_leaf_predictor(&self) -> ClassCounts {
+        self.iter().map(|sample| &sample.y).sum()
+    }
+
+    fn partition_data(&mut self, split: &Split<(f64, f64), f64>) -> (&mut Self, &mut Self) {
+        let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
+        self.split_at_mut(i)
+    }
+
+    fn split_criterion(&self) -> f64 {
+        let counts: ClassCounts = self.iter().map(|sample| &sample.y).sum();
+        let p_red = counts.prob(Classes::Red);
+        let p_green = counts.prob(Classes::Green);
+        let p_blue = counts.prob(Classes::Blue);
+        let gini = p_red * (1.0 - p_red) + p_green * (1.0 - p_green) + p_blue * (1.0 - p_blue);
+        gini
+    }
+
+    fn feature_bounds(&self, theta: &(f64, f64)) -> (f64, f64) {
+        self.iter()
+            .map(|sample| sample.sample_as_split_feature(theta))
+            .fold((std::f64::INFINITY, std::f64::NEG_INFINITY),
+                         |(min, max), x| {
+                             (if x < min {x} else {min},
+                              if x > max {x} else {max})
+        })
+    }
+}
+
 const N_SAMPLES: usize = 1000;
 
 const N_ROWS: u32 = 300;
@@ -36,7 +136,7 @@ const N_COLS: u32 = 300;
 
 /// function used to generate training data
 fn spiral(r: f64, c: u8) -> f64 {
-    let phi = r + PI * 2.0 * c as f64 / N_CLASSES as f64;
+    let phi = r + PI * 2.0 * c as f64 / 3.0;
     phi
 }
 
@@ -54,35 +154,28 @@ fn randspace(l: f64, h: f64, n: usize) -> Vec<f64> {
 
 fn main() {
     // generate data points
-    let y0: Vec<u8> = (0..N_CLASSES).cycle().take(N_SAMPLES).collect();
+    let y0: Vec<Classes> = vec![Classes::Red, Classes::Green, Classes::Blue].into_iter().cycle().take(N_SAMPLES).collect();
     let r = randspace(0.0, 6.0, N_SAMPLES);
     let phi: Vec<_> = r.iter().map(|&r| r).zip(y0.iter())
-        .map(|(r, &c)| spiral(r, c) + thread_rng().gen::<f64>() * 2.0 * PI / N_CLASSES as f64)
+        .map(|(r, &c)| spiral(r, c as u8) + thread_rng().gen::<f64>() * PI * 2.0 / 3.0)
         .collect();
 
     let x0: Vec<_> = r.into_iter()
         .zip(phi.into_iter())
-        //.zip((0..N_CLASSES).cycle())
         .map(|(r, phi)| [phi.sin() * r, phi.cos() * r]).collect();
 
-
     // convert data to data set for fitting
-    let mut data: Vec<_> = x0.iter().zip(y0.iter()).map(|(&x, &y)| Sample::new(x, y)).collect();
+    let mut data: Vec<_> = x0.iter().zip(y0.iter()).map(|(&x, &y)| Sample{x, y}).collect();
 
     // configure and fit random forest
     println!("Fitting...");
-    /*let forest = ExtraTreesClassifier::new()
-        .n_estimators(100)
-        .n_splits(100)
-        .min_samples_split(2)
-        .fit(&mut data);*/
-    let forest = Builder::new(
+    let forest = DeterministicForestBuilder::new(
         100,
-        TreeBuilder::new(
-            SplitFitter::new(100, thread_rng()),
-            2
+        DeterministicTreeBuilder::new(
+            2,
+            BestRandomSplit::new(100)
         )
-    ).fit(&mut data);
+    ).fit(&mut data as &mut [_]);
 
     // generate test data
     let x_grid = linspace(-4.0, 4.0, N_ROWS as usize);
@@ -93,13 +186,11 @@ fn main() {
     let mut z = Vec::with_capacity(3 * (N_ROWS * N_COLS) as usize);
     for &y in y_grid.iter() {
         for &x in x_grid.iter() {
-            let p = forest.predict(&[x, y]);
-            let mut r = p.prob(0);
-            let mut g = p.prob(1);
-            let mut b = p.prob(2);
-            z.push(r);
-            z.push(g);
-            z.push(b);
+            let sx = [x, y];
+            let c = forest.predict(&Sample{x: sx, y: ()});
+            z.push(c.prob(Classes::Red));
+            z.push(c.prob(Classes::Green));
+            z.push(c.prob(Classes::Blue));
         }
     }
 
