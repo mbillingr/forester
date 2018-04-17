@@ -1,38 +1,142 @@
 use std::cmp;
 
+use num_traits::Bounded;
+
 use rand::{thread_rng, ThreadRng};
 use rand::distributions::range::SampleRange;
 
-use criteria::{GiniCriterion, VarCriterion};
+use criteria::GiniCriterion;
 use d_tree::{DeterministicTree, DeterministicTreeBuilder};
 use datasets::TupleSample;
 use ensemble::{Ensemble, EnsembleBuilder};
 use features::ColumnSelect;
 use get_item::GetItem;
-use predictors::{CategoricalProbabilities, ClassPredictor, ConstMean};
+use predictors::{CategoricalProbabilities, ClassPredictor};
 use splitters::{BestRandomSplit, ThresholdSplitter};
 use traits::LearnerMut;
+use vec2d::Vec2D;
 
 
 pub mod extra_trees_regressor {
+    use std::f64;
+    use rand::Rng;
     use super::*;
+    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, SampleDescription, Split, TrainingData};
+    use array_ops::Partition;
+    use iter_mean::IterMean;
 
-    pub type Builder<X, Y> = EnsembleBuilder<Y, Data<X, Y>, TreeBuilder<X, Y>, Tree<X, Y>>;
+    #[derive(Debug)]
+    pub struct Sample<'a, X: 'a, Y> {
+        x: &'a[X],
+        y: Y,
+    }
 
-    pub type Model<X, Y> = Ensemble<X, Y, Tree<X, Y>>;
+    impl<'a, X, Y> SampleDescription for Sample<'a, X, Y>
+        where X: Clone + PartialOrd + SampleRange
+    {
+        type ThetaSplit = usize;
+        type ThetaLeaf = f64;
+        type Feature = X;
+        type Prediction = f64;
 
-    pub type TreeBuilder<X, Y> = DeterministicTreeBuilder<SplitFitter<X, Y>, Predictor<X, Y>>;
+        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+            self.x[*theta].clone()
+        }
 
-    pub type Tree<X, Y> = DeterministicTree<Splitter<X, Y>, Predictor<X, Y>>;
+        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+            *w
+        }
+    }
 
-    pub type Data<X, Y> = [Sample<X, Y>];
-    pub type Sample<X, Y> = TupleSample<Features, X, Y>;
+    // TODO: these impls just scream for macros
 
-    pub type SplitFitter<X, Y> = BestRandomSplit<Splitter<X, Y>, SplitCriterion<X, Y>, ThreadRng>;
-    pub type Splitter<X, Y> = ThresholdSplitter<Data<X, Y>>;
-    pub type Predictor<X, Y> =  ConstMean<Sample<X, Y>>;
-    pub type Features = ColumnSelect;
-    pub type SplitCriterion<X, Y> = VarCriterion<Sample<X, Y>>;
+    impl<'a, X> SampleDescription for &'a[X]
+        where X: Clone + PartialOrd + SampleRange
+    {
+        type ThetaSplit = usize;
+        type ThetaLeaf = f64;
+        type Feature = X;
+        type Prediction = f64;
+
+        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+            self[*theta].clone()
+        }
+
+        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+            *w
+        }
+    }
+
+    impl<X> SampleDescription for [X]
+        where X: Clone + PartialOrd + SampleRange
+    {
+        type ThetaSplit = usize;
+        type ThetaLeaf = f64;
+        type Feature = X;
+        type Prediction = f64;
+
+        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+            self[*theta].clone()
+        }
+
+        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+            *w
+        }
+    }
+
+    impl<X> SampleDescription for [X; 1]
+        where X: Clone + PartialOrd + SampleRange
+    {
+        type ThetaSplit = usize;
+        type ThetaLeaf = f64;
+        type Feature = X;
+        type Prediction = f64;
+
+        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+            self[*theta].clone()
+        }
+
+        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+            *w
+        }
+    }
+
+    impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
+        where X: Clone + PartialOrd + SampleRange + Bounded
+    {
+        fn n_samples(&self) -> usize {
+            self.len()
+        }
+
+        fn gen_split_feature(&self) -> usize {
+            let n = self[0].x.len();
+            thread_rng().gen_range(0, n)
+        }
+
+        fn train_leaf_predictor(&self) -> f64 {
+            f64::mean(self.iter().map(|sample| &sample.y))
+        }
+
+        fn partition_data(&mut self, split: &Split<usize, X>) -> (&mut Self, &mut Self) {
+            let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
+            self.split_at_mut(i)
+        }
+
+        fn split_criterion(&self) -> f64 {
+            let mean = f64::mean(self.iter().map(|sample| &sample.y));
+            self.iter().map(|sample| sample.y - mean).map(|ym| ym * ym).sum::<f64>() / self.len() as f64
+        }
+
+        fn feature_bounds(&self, theta: &usize) -> (X, X) {
+            self.iter()
+                .map(|sample| sample.sample_as_split_feature(theta))
+                .fold((X::max_value(), X::min_value()),
+                      |(min, max), x| {
+                          (if x < min {x.clone()} else {min},
+                           if x > max {x} else {max})
+            })
+        }
+    }
 
     pub struct ExtraTreesRegressor {
         n_estimators: usize,
@@ -59,6 +163,23 @@ pub mod extra_trees_regressor {
             self.min_samples_split = n;
             self
         }
+
+        pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<f64>) -> DeterministicForest<Sample<'b, T, f64>>
+            where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
+        {
+            let mut data: Vec<Sample<T, f64>> = x.iter()
+                .zip(y.iter())
+                .map(|(xi, yi)| Sample{x: xi, y: *yi})
+                .collect();
+
+            DeterministicForestBuilder::new(
+                self.n_estimators,
+                DeterministicTreeBuilder::new(
+                    self.min_samples_split,
+                    BestRandomSplit::new(self.n_splits)
+                )
+            ).fit(&mut data[..])
+        }
     }
 
     impl Default for ExtraTreesRegressor {
@@ -68,25 +189,6 @@ pub mod extra_trees_regressor {
                 n_splits: 1,
                 min_samples_split: 2,
             }
-        }
-    }
-
-    impl<X> LearnerMut<Data<X, f64>, Model<X, f64>> for ExtraTreesRegressor
-        where X: Clone + GetItem,
-              X::Item: Clone + cmp::PartialOrd + SampleRange,
-    {
-
-        fn fit(&self, data: &mut Data<X, f64>) -> Model<X, f64>
-        {
-            Builder::new(
-                self.n_estimators,
-                TreeBuilder::new(
-                    SplitFitter::new(
-                        self.n_splits,
-                        thread_rng()),
-                    self.min_samples_split,
-                )
-            ).fit(data)
         }
     }
 }
@@ -177,20 +279,16 @@ mod tests {
     #[test]
     fn extra_trees_regressor() {
         use super::extra_trees_regressor::ExtraTreesRegressor;
-        use super::extra_trees_regressor::Sample;
-        use Predictor;
-        use traits::LearnerMut;
+        use vec2d::Vec2D;
 
-        let x = vec![[1], [2], [3],    [7], [8], [9]];
+        let x = Vec2D::from_slice(&[1, 2, 3,    7, 8, 9], 1);
         let y = vec![5.0, 5.0, 5.0,    2.0, 2.0, 2.0];
-
-        let mut data: Vec<_> = x.into_iter().zip(y.into_iter()).map(|(x, y)| Sample::new(x, y)).collect();
 
         let model = ExtraTreesRegressor::new()
             .n_estimators(2)
             .n_splits(1)
             .min_samples_split(2)
-            .fit(&mut data);
+            .fit(&x, &y);
 
         assert_eq!(model.predict(&[-1000]), 5.0);
         assert_eq!(model.predict(&[1000]), 2.0);

@@ -1,3 +1,4 @@
+extern crate num_traits;
 extern crate rand;
 
 pub mod api;
@@ -13,7 +14,7 @@ pub mod random;
 pub mod splitters;
 pub mod traits;
 pub mod d_tree;
-//pub mod vec2d;
+pub mod vec2d;
 
 type Real = f64;
 
@@ -162,7 +163,7 @@ impl<Sample> DeterministicTree<Sample>
     pub fn predict<TestingSample>(&self, sample: &TestingSample) -> TestingSample::Prediction
         where TestingSample: SampleDescription<ThetaSplit=Sample::ThetaSplit,
                                                ThetaLeaf=Sample::ThetaLeaf,
-                                               Feature=Sample::Feature>,
+                                               Feature=Sample::Feature> + ?Sized,
     {
         let start = &self.nodes[0] as *const Node<Sample>;
         let mut node = &self.nodes[0] as *const Node<Sample>;
@@ -181,6 +182,18 @@ impl<Sample> DeterministicTree<Sample>
                     }
                     Node::Invalid => panic!("Invalid node found. Tree may not be fully constructed.")
                 }
+            }
+        }
+    }
+
+    pub fn print(&self)
+        where Sample::ThetaLeaf: std::fmt::Debug
+    {
+        for node in &self.nodes {
+            match node {
+                &Node::Invalid => println!("INVALID NODE"),
+                &Node::Leaf(ref l) => println!("Leaf Node: {:?}", l),
+                &Node::Split{..} => println!("Split Node"),
             }
         }
     }
@@ -323,7 +336,6 @@ pub struct DeterministicForest<Sample>
 }
 
 
-
 impl<Sample> DeterministicForest<Sample>
     where Sample: SampleDescription
 {
@@ -332,13 +344,22 @@ impl<Sample> DeterministicForest<Sample>
     pub fn predict<TestingSample>(&self, sample: &TestingSample) -> TestingSample::Prediction
         where TestingSample: SampleDescription<ThetaSplit=Sample::ThetaSplit,
                                                ThetaLeaf=Sample::ThetaLeaf,
-                                               Feature=Sample::Feature>,
+                                               Feature=Sample::Feature> + ?Sized,
               TestingSample::Prediction: IterMean,
     {
         let iter = self.estimators
             .iter()
             .map(|tree| tree.predict(sample));
         TestingSample::Prediction::mean(iter)
+    }
+
+    pub fn print(&self)
+        where Sample::ThetaLeaf: std::fmt::Debug
+    {
+        for (i, tree) in self.estimators.iter().enumerate() {
+            println!("Tree {}:", i + 1);
+            tree.print();
+        }
     }
 }
 
