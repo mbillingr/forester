@@ -18,7 +18,7 @@ use forester::{
 use forester::array_ops::Partition;
 use forester::iter_mean::IterMean;
 
-// TODO: Some of this structs/impls should likely go into the library
+// TODO: Some of this structs/impls should likely go into the library or into an examples-common module
 
 #[derive(Copy, Clone)]
 enum Classes {
