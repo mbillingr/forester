@@ -17,6 +17,7 @@ profiling = ["cpuprofiler"]
 
 [dependencies]
 cpuprofiler = { version = "0.0.3", optional = true }  # this is a dev-dependency, but those can't be optional
+num-traits = "0.1"
 rand = "0.4"
 
 [dev-dependencies]
