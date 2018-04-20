@@ -70,12 +70,30 @@ impl IterMean<ClassCounts> for ClassCounts {
     }
 }
 
+// `impl SampleDescription for &Sample` is one option. In this case each tree is run on a reference of the sample.
+// An alternative is to derive `Clone` for `Sample`, in which case every tree is run on the clone of a sample.
+
 struct Sample<Y> {
     x: [f64; 2],
     y: Y,
 }
 
 impl<Y> SampleDescription for Sample<Y> {
+    type ThetaSplit = (f64, f64);
+    type ThetaLeaf = ClassCounts;
+    type Feature = f64;
+    type Prediction = ClassCounts;
+
+    fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+        self.x[0] * theta.0 + self.x[1] * theta.1
+    }
+
+    fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+        w.clone()
+    }
+}
+
+impl<'a, Y> SampleDescription for &'a Sample<Y> {
     type ThetaSplit = (f64, f64);
     type ThetaLeaf = ClassCounts;
     type Feature = f64;

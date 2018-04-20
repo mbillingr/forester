@@ -70,6 +70,10 @@ impl IterMean<ClassCounts> for ClassCounts {
     }
 }
 
+// Clonable samples is one option. In this case each tree is run on the clone of a sample.
+// An alternative is to `impl SampleDescription for &Sample`, in which case every tree gets a reference to the sample
+
+#[derive(Clone)]
 struct Sample<Y> {
     x: [f64; 2],
     y: Y,
@@ -186,7 +190,7 @@ fn main() {
     for &y in y_grid.iter() {
         for &x in x_grid.iter() {
             let sx = [x, y];
-            let c = forest.predict(&Sample{x: sx, y: ()});
+            let c = forest.predict(Sample{x: sx, y: ()});
             z.push(c.prob(Classes::Red));
             z.push(c.prob(Classes::Green));
             z.push(c.prob(Classes::Blue));

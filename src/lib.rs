@@ -76,6 +76,11 @@ pub trait SampleDescription {
     fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction;
 }
 
+pub trait IntoSample {
+    type Description: SampleDescription;
+    fn into_sample(self) -> Self::Description;
+}
+
 impl<'a, T> SampleDescription for (T, &'a[f64]) {
     type ThetaSplit = usize;
     type ThetaLeaf = f64;
@@ -89,6 +94,28 @@ impl<'a, T> SampleDescription for (T, &'a[f64]) {
     fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
         *w
     }
+}
+
+impl<'a, T> SampleDescription for &'a(T, &'a[f64]) {
+    type ThetaSplit = usize;
+    type ThetaLeaf = f64;
+    type Feature = f64;
+    type Prediction = f64;
+
+    fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+        self.1[*theta]
+    }
+
+    fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+        *w
+    }
+}
+
+impl<T> IntoSample for T
+    where T: SampleDescription
+{
+    type Description = T;
+    fn into_sample(self) -> Self::Description { self }
 }
 
 impl<'a> TrainingData<(f64, &'a[f64])> for [(f64, &'a[f64])] {
@@ -160,25 +187,27 @@ impl<Sample> DeterministicTree<Sample>
 {
     // Making the predict function generic allows the user to pass in any sample that's compatible
     // with the tree's sample type
-    pub fn predict<TestingSample>(&self, sample: &TestingSample) -> TestingSample::Prediction
-        where TestingSample: SampleDescription<ThetaSplit=Sample::ThetaSplit,
-                                               ThetaLeaf=Sample::ThetaLeaf,
-                                               Feature=Sample::Feature> + ?Sized,
+    pub fn predict<S>(&self, sample: S) -> <S::Description as SampleDescription>::Prediction
+        where S: IntoSample,
+              S::Description: SampleDescription<ThetaSplit=Sample::ThetaSplit,
+                                                ThetaLeaf=Sample::ThetaLeaf,
+                                                Feature=Sample::Feature>,
     {
+        let sd = sample.into_sample();
         let start = &self.nodes[0] as *const Node<Sample>;
         let mut node = &self.nodes[0] as *const Node<Sample>;
         unsafe {
             loop {
                 match *node {
                     Node::Split { ref theta, ref threshold, left, right } => {
-                        if &sample.sample_as_split_feature(theta) <= threshold {
+                        if &sd.sample_as_split_feature(theta) <= threshold {
                             node = start.offset(left as isize);
                         } else {
                             node = start.offset(right as isize);
                         }
                     }
                     Node::Leaf(ref l) => {
-                        return sample.sample_predict(l)
+                        return sd.sample_predict(l)
                     }
                     Node::Invalid => panic!("Invalid node found. Tree may not be fully constructed.")
                 }
@@ -276,6 +305,7 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
         }
     }
 
+    // TODO: use IntoSample trait
     pub fn fit<Training>(&self, data: &mut Training) -> DeterministicTree<Sample>
         where Training: ?Sized + TrainingData<Sample>
     {
@@ -341,16 +371,17 @@ impl<Sample> DeterministicForest<Sample>
 {
     // Making the predict function generic allows the user to pass in any sample that's compatible
     // with the tree's sample type
-    pub fn predict<TestingSample>(&self, sample: &TestingSample) -> TestingSample::Prediction
-        where TestingSample: SampleDescription<ThetaSplit=Sample::ThetaSplit,
-                                               ThetaLeaf=Sample::ThetaLeaf,
-                                               Feature=Sample::Feature> + ?Sized,
-              TestingSample::Prediction: IterMean,
+    pub fn predict<S>(&self, sample: S) -> <S::Description as SampleDescription>::Prediction
+        where S: IntoSample + Clone,
+              S::Description: SampleDescription<ThetaSplit=Sample::ThetaSplit,
+                                                ThetaLeaf=Sample::ThetaLeaf,
+                                                Feature=Sample::Feature>,
+              <S::Description as SampleDescription>::Prediction: IterMean,
     {
         let iter = self.estimators
             .iter()
-            .map(|tree| tree.predict(sample));
-        TestingSample::Prediction::mean(iter)
+            .map(|tree| tree.predict(sample.clone()));
+        <S::Description as SampleDescription>::Prediction::mean(iter)
     }
 
     pub fn print(&self)
@@ -383,6 +414,7 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
         }
     }
 
+    // TODO: use IntoSample trait
     pub fn fit<Training>(&self, data: &mut Training) -> DeterministicForest<Sample>
         where Training: ?Sized + TrainingData<Sample>
     {
@@ -426,7 +458,7 @@ mod tests {
         let tree = dtb.fit(data);
 
         for sample in data {
-            assert_eq!(tree.predict(sample), sample.0);
+            assert_eq!(tree.predict(&*sample), sample.0);
         }
 
     }

@@ -290,10 +290,10 @@ mod tests {
             .min_samples_split(2)
             .fit(&x, &y);
 
-        assert_eq!(model.predict(&[-1000]), 5.0);
-        assert_eq!(model.predict(&[1000]), 2.0);
+        assert_eq!(model.predict(&[-1000] as &[_]), 5.0);
+        assert_eq!(model.predict(&[1000] as &[_]), 2.0);
 
-        let p = model.predict(&[5]);
+        let p = model.predict(&[5] as &[_]);
         assert!(p >= 2.0);
         assert!(p <= 5.0);
     }
