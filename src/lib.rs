@@ -31,6 +31,22 @@ pub struct Split<Theta, Threshold> {
     pub threshold: Threshold,
 }
 
+/// Trait for categorical variables
+pub trait Categorical {
+    /// return unique id of given category
+    fn as_usize(&self) -> usize;
+
+    /// total number of categories
+    fn n_categories(&self) -> usize;
+}
+
+pub trait CatCount<C>
+    where C: Categorical
+{
+    fn add(&mut self, c: &C);
+    fn probability(&self, c: &C);
+}
+
 /// Trait for a dataset that can be used for training a decision tree
 pub trait TrainingData<Sample>
     where Sample: SampleDescription
@@ -77,7 +93,7 @@ pub trait SampleDescription {
 }
 
 /// Trait for types that can be converted into a SampleDescription
-pub trait IntoSample {
+pub trait IntoSample<T=Self> {
     type Description: SampleDescription;
     fn into_sample(self) -> Self::Description;
 }

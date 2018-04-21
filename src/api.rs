@@ -107,7 +107,7 @@ pub mod extra_trees_regressor {
                       |(min, max), x| {
                           (if x < min {x.clone()} else {min},
                            if x > max {x} else {max})
-            })
+                      })
         }
     }
 
@@ -177,6 +177,167 @@ pub mod extra_trees_regressor {
 
 
 pub mod extra_trees_classifier {
+    use std::f64;
+    use rand::Rng;
+    use super::*;
+    use ::{AsTrainingData, BestRandomSplit, Categorical, CatCount, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, IntoSample, SampleDescription, Split, TrainingData};
+    use array_ops::Partition;
+    use iter_mean::IterMean;
+
+    #[derive(Debug)]
+    pub struct Sample<'a, X: 'a, Y>
+        where Y: Categorical
+    {
+        x: &'a[X],
+        y: Y,
+    }
+
+    impl<'a, X, Y> SampleDescription for Sample<'a, X, Y>
+        where X: Clone + PartialOrd + SampleRange
+    {
+        type ThetaSplit = usize;
+        type ThetaLeaf = CatCount<Y>;
+        type Feature = X;
+        type Prediction = CatCount<Y>;
+
+        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+            self.x[*theta].clone()
+        }
+
+        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+            *w
+        }
+    }
+
+    // TODO: these impls just scream for macros
+
+    impl<'a, X> IntoSample for &'a[X]
+        where X: Clone + PartialOrd + SampleRange
+    {
+        type Description = Sample<'a, X, ()>;
+        fn into_sample(self) -> Self::Description {
+            Sample {
+                x: self,
+                y: ()
+            }
+        }
+    }
+
+    impl<'a, X> IntoSample for &'a[X; 1]
+        where X: Clone + PartialOrd + SampleRange
+    {
+        type Description = Sample<'a, X, ()>;
+        fn into_sample(self) -> Self::Description {
+            Sample {
+                x: self,
+                y: ()
+            }
+        }
+    }
+
+    impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
+        where X: Clone + PartialOrd + SampleRange + Bounded
+    {
+        fn n_samples(&self) -> usize {
+            self.len()
+        }
+
+        fn gen_split_feature(&self) -> usize {
+            let n = self[0].x.len();
+            thread_rng().gen_range(0, n)
+        }
+
+        fn train_leaf_predictor(&self) -> f64 {
+            f64::mean(self.iter().map(|sample| &sample.y))
+        }
+
+        fn partition_data(&mut self, split: &Split<usize, X>) -> (&mut Self, &mut Self) {
+            let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
+            self.split_at_mut(i)
+        }
+
+        fn split_criterion(&self) -> f64 {
+            let mean = f64::mean(self.iter().map(|sample| &sample.y));
+            self.iter().map(|sample| sample.y - mean).map(|ym| ym * ym).sum::<f64>() / self.len() as f64
+        }
+
+        fn feature_bounds(&self, theta: &usize) -> (X, X) {
+            self.iter()
+                .map(|sample| sample.sample_as_split_feature(theta))
+                .fold((X::max_value(), X::min_value()),
+                      |(min, max), x| {
+                          (if x < min {x.clone()} else {min},
+                           if x > max {x} else {max})
+                      })
+        }
+    }
+
+    impl<'a, X> AsTrainingData<Sample<'a, X, f64>> for Vec<Sample<'a, X, f64>>
+        where X: Clone + PartialOrd + SampleRange + Bounded
+    {
+        type Description = [Sample<'a, X, f64>];
+        fn as_training(&mut self) -> &mut Self::Description {
+            &mut self[..]
+        }
+    }
+
+    pub struct ExtraTreesClassifier {
+        n_estimators: usize,
+        n_splits: usize,
+        min_samples_split: usize,
+    }
+
+    impl ExtraTreesClassifier {
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        pub fn n_estimators(mut self, n: usize) -> Self {
+            self.n_estimators = n;
+            self
+        }
+
+        pub fn n_splits(mut self, n: usize) -> Self {
+            self.n_splits = n;
+            self
+        }
+
+        pub fn min_samples_split(mut self, n: usize) -> Self {
+            self.min_samples_split = n;
+            self
+        }
+
+        pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<f64>) -> DeterministicForest<Sample<'b, T, f64>>
+            where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
+        {
+            let mut data: Vec<Sample<T, f64>> = x.iter()
+                .zip(y.iter())
+                .map(|(xi, yi)| Sample{x: xi, y: *yi})
+                .collect();
+
+            DeterministicForestBuilder::new(
+                self.n_estimators,
+                DeterministicTreeBuilder::new(
+                    self.min_samples_split,
+                    BestRandomSplit::new(self.n_splits)
+                )
+            ).fit(&mut data)
+        }
+    }
+
+    impl Default for ExtraTreesClassifier {
+        fn default() -> Self {
+            Self {
+                n_estimators: 10,
+                n_splits: 1,
+                min_samples_split: 2,
+            }
+        }
+    }
+}
+
+
+/*pub mod extra_trees_classifier {
     use super::*;
 
     pub type Builder<X> = EnsembleBuilder<CategoricalProbabilities, Data<X>, TreeBuilder<X>, Tree<X>>;
@@ -252,7 +413,7 @@ pub mod extra_trees_classifier {
             ).fit(data)
         }
     }
-}
+}*/
 
 
 #[cfg(test)]
