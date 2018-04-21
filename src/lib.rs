@@ -76,9 +76,16 @@ pub trait SampleDescription {
     fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction;
 }
 
+/// Trait for types that can be converted into a SampleDescription
 pub trait IntoSample {
     type Description: SampleDescription;
     fn into_sample(self) -> Self::Description;
+}
+
+/// Trait for types that can be converted into a TrainingData
+pub trait AsTrainingData<Sample: SampleDescription> {
+    type Description: TrainingData<Sample> + ?Sized;
+    fn as_training(&mut self) -> &mut Self::Description;
 }
 
 impl<'a, T> SampleDescription for (T, &'a[f64]) {
@@ -111,12 +118,24 @@ impl<'a, T> SampleDescription for &'a(T, &'a[f64]) {
     }
 }
 
+/// All types that are SampleDescription trivially implement IntoSample
 impl<T> IntoSample for T
     where T: SampleDescription
 {
     type Description = T;
     fn into_sample(self) -> Self::Description { self }
 }
+
+/*
+/// All types that are TrainingData trivially implement IntoTraining
+impl<T, S> AsTrainingData<S> for T
+    where T: TrainingData<S>,
+          S: SampleDescription,
+{
+    type Description = T;
+    fn as_training(&self) -> Self::Description { self }
+}
+*/
 
 impl<'a> TrainingData<(f64, &'a[f64])> for [(f64, &'a[f64])] {
     fn n_samples(&self) -> usize {
@@ -415,12 +434,13 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
     }
 
     // TODO: use IntoSample trait
-    pub fn fit<Training>(&self, data: &mut Training) -> DeterministicForest<Sample>
-        where Training: ?Sized + TrainingData<Sample>
+    pub fn fit<T>(&self, data: &mut T) -> DeterministicForest<Sample>
+        where T: AsTrainingData<Sample>,
     {
+        let mut training_data = data.as_training();
         let mut estimators = Vec::with_capacity(self.n_estimators);
         for _ in 0..self.n_estimators {
-            estimators.push(self.tree_builder.fit(data));
+            estimators.push(self.tree_builder.fit(training_data));
         }
 
         DeterministicForest {

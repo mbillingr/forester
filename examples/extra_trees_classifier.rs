@@ -9,6 +9,7 @@ use std::iter::Sum;
 use rand::{thread_rng, Rng};
 
 use forester::{
+    AsTrainingData,
     BestRandomSplit,
     DeterministicForestBuilder,
     DeterministicTreeBuilder,
@@ -132,6 +133,14 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
     }
 }
 
+impl AsTrainingData<Sample<Classes>> for Vec<Sample<Classes>>
+{
+    type Description = [Sample<Classes>];
+    fn as_training(&mut self) -> &mut Self::Description {
+        &mut self[..]
+    }
+}
+
 const N_SAMPLES: usize = 1000;
 
 const N_ROWS: u32 = 300;
@@ -178,7 +187,7 @@ fn main() {
             10,
             BestRandomSplit::new(1)
         )
-    ).fit(&mut data as &mut [_]);
+    ).fit(&mut data);
 
     // generate test data
     let x_grid = linspace(-4.0, 4.0, N_ROWS as usize);

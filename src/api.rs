@@ -21,7 +21,7 @@ pub mod extra_trees_regressor {
     use std::f64;
     use rand::Rng;
     use super::*;
-    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, SampleDescription, Split, TrainingData};
+    use ::{AsTrainingData, BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, SampleDescription, Split, TrainingData};
     use array_ops::Partition;
     use iter_mean::IterMean;
 
@@ -138,6 +138,15 @@ pub mod extra_trees_regressor {
         }
     }
 
+    impl<'a, X> AsTrainingData<Sample<'a, X, f64>> for Vec<Sample<'a, X, f64>>
+        where X: Clone + PartialOrd + SampleRange + Bounded
+    {
+        type Description = [Sample<'a, X, f64>];
+        fn as_training(&mut self) -> &mut Self::Description {
+            &mut self[..]
+        }
+    }
+
     pub struct ExtraTreesRegressor {
         n_estimators: usize,
         n_splits: usize,
@@ -178,7 +187,7 @@ pub mod extra_trees_regressor {
                     self.min_samples_split,
                     BestRandomSplit::new(self.n_splits)
                 )
-            ).fit(&mut data[..])
+            ).fit(&mut data)
         }
     }
 
