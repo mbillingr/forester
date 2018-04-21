@@ -31,6 +31,12 @@ pub mod extra_trees_regressor {
         y: Y,
     }
 
+    impl<'a, X: 'a, Y> Sample<'a, X, Y> {
+        pub fn new(x: &'a[X], y: Y) -> Self {
+            Sample { x, y }
+        }
+    }
+
     impl<'a, X, Y> SampleDescription for Sample<'a, X, Y>
         where X: Clone + PartialOrd + SampleRange
     {
@@ -50,7 +56,7 @@ pub mod extra_trees_regressor {
 
     // TODO: these impls just scream for macros
 
-    impl<'a, X> SampleDescription for &'a[X]
+/*    impl<'a, X> SampleDescription for &'a[X]
         where X: Clone + PartialOrd + SampleRange
     {
         type ThetaSplit = usize;
@@ -99,7 +105,7 @@ pub mod extra_trees_regressor {
         fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
             *w
         }
-    }
+    }*/
 
     impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
         where X: Clone + PartialOrd + SampleRange + Bounded
@@ -278,7 +284,7 @@ mod tests {
 
     #[test]
     fn extra_trees_regressor() {
-        use super::extra_trees_regressor::ExtraTreesRegressor;
+        use super::extra_trees_regressor::{ExtraTreesRegressor, Sample};
         use vec2d::Vec2D;
 
         let x = Vec2D::from_slice(&[1, 2, 3,    7, 8, 9], 1);
@@ -290,10 +296,10 @@ mod tests {
             .min_samples_split(2)
             .fit(&x, &y);
 
-        assert_eq!(model.predict(&[-1000]), 5.0);
-        assert_eq!(model.predict(&[1000]), 2.0);
+        assert_eq!(model.predict(&Sample::new(&[-1000], ())), 5.0);
+        assert_eq!(model.predict(&Sample::new(&[1000], ())), 2.0);
 
-        let p = model.predict(&[5]);
+        let p = model.predict(&Sample::new(&[5], ()));
         assert!(p >= 2.0);
         assert!(p <= 5.0);
     }

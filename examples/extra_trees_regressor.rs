@@ -48,7 +48,7 @@ fn main() {
     let x = linspace(-0.2, 1.2, 1000);
 
     // predict y values
-    let y: Vec<_> = x.iter().map(|&x| forest.predict(&[x])).collect();
+    let y: Vec<_> = x.iter().map(|&x| forest.predict(&Sample::new(&[x], ()))).collect();
 
     // plot results
     let mut fig = Figure::new();
