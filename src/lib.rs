@@ -88,36 +88,6 @@ pub trait AsTrainingData<Sample: SampleDescription> {
     fn as_training(&mut self) -> &mut Self::Description;
 }
 
-impl<'a, T> SampleDescription for (T, &'a[f64]) {
-    type ThetaSplit = usize;
-    type ThetaLeaf = f64;
-    type Feature = f64;
-    type Prediction = f64;
-
-    fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
-        self.1[*theta]
-    }
-
-    fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
-        *w
-    }
-}
-
-impl<'a, T> SampleDescription for &'a(T, &'a[f64]) {
-    type ThetaSplit = usize;
-    type ThetaLeaf = f64;
-    type Feature = f64;
-    type Prediction = f64;
-
-    fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
-        self.1[*theta]
-    }
-
-    fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
-        *w
-    }
-}
-
 /// All types that are SampleDescription trivially implement IntoSample
 impl<T> IntoSample for T
     where T: SampleDescription
@@ -126,52 +96,14 @@ impl<T> IntoSample for T
     fn into_sample(self) -> Self::Description { self }
 }
 
-/*
-/// All types that are TrainingData trivially implement IntoTraining
+
+/// All types that are TrainingData trivially implement AsTrainingData
 impl<T, S> AsTrainingData<S> for T
     where T: TrainingData<S>,
           S: SampleDescription,
 {
     type Description = T;
-    fn as_training(&self) -> Self::Description { self }
-}
-*/
-
-impl<'a> TrainingData<(f64, &'a[f64])> for [(f64, &'a[f64])] {
-    fn n_samples(&self) -> usize {
-        self.len()
-    }
-
-    fn gen_split_feature(&self) -> usize {
-        thread_rng().gen_range(0, self[0].1.len())
-    }
-
-    fn train_leaf_predictor(&self) -> f64 {
-        self.iter().map(|&(y, _)| y).sum::<f64>() / self.len() as f64
-    }
-
-    /// Partition data set in-place according to a split
-    fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
-        let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-        self.split_at_mut(i)
-    }
-
-    /// Compute split criterion
-    fn split_criterion(&self) -> f64 {
-        let mean = self.iter().map(|&(y, _)| y).sum::<f64>() / self.len() as f64;
-        self.iter().map(|&(y, _)| y - mean).map(|ym| ym * ym).sum::<f64>() / self.len() as f64
-    }
-
-    /// Return minimum and maximum value of a feature
-    fn feature_bounds(&self, theta: &usize) -> (f64, f64) {
-        self.iter()
-            .map(|sample| sample.sample_as_split_feature(theta))
-            .fold((std::f64::INFINITY, std::f64::NEG_INFINITY),
-                         |(min, max), x| {
-                             (if x < min {x} else {min},
-                              if x > max {x} else {max})
-        })
-    }
+    fn as_training(&mut self) -> &mut Self::Description { self }
 }
 
 /// Find split
@@ -433,11 +365,10 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
         }
     }
 
-    // TODO: use IntoSample trait
     pub fn fit<T>(&self, data: &mut T) -> DeterministicForest<Sample>
         where T: AsTrainingData<Sample>,
     {
-        let mut training_data = data.as_training();
+        let training_data = data.as_training();
         let mut estimators = Vec::with_capacity(self.n_estimators);
         for _ in 0..self.n_estimators {
             estimators.push(self.tree_builder.fit(training_data));
@@ -453,6 +384,73 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    impl<'a, T> SampleDescription for (T, &'a[f64]) {
+        type ThetaSplit = usize;
+        type ThetaLeaf = f64;
+        type Feature = f64;
+        type Prediction = f64;
+
+        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+            self.1[*theta]
+        }
+
+        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+            *w
+        }
+    }
+
+    impl<'a, T> SampleDescription for &'a(T, &'a[f64]) {
+        type ThetaSplit = usize;
+        type ThetaLeaf = f64;
+        type Feature = f64;
+        type Prediction = f64;
+
+        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
+            self.1[*theta]
+        }
+
+        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
+            *w
+        }
+    }
+
+    impl<'a> TrainingData<(f64, &'a[f64])> for [(f64, &'a[f64])] {
+        fn n_samples(&self) -> usize {
+            self.len()
+        }
+
+        fn gen_split_feature(&self) -> usize {
+            thread_rng().gen_range(0, self[0].1.len())
+        }
+
+        fn train_leaf_predictor(&self) -> f64 {
+            self.iter().map(|&(y, _)| y).sum::<f64>() / self.len() as f64
+        }
+
+        /// Partition data set in-place according to a split
+        fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
+            let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
+            self.split_at_mut(i)
+        }
+
+        /// Compute split criterion
+        fn split_criterion(&self) -> f64 {
+            let mean = self.iter().map(|&(y, _)| y).sum::<f64>() / self.len() as f64;
+            self.iter().map(|&(y, _)| y - mean).map(|ym| ym * ym).sum::<f64>() / self.len() as f64
+        }
+
+        /// Return minimum and maximum value of a feature
+        fn feature_bounds(&self, theta: &usize) -> (f64, f64) {
+            self.iter()
+                .map(|sample| sample.sample_as_split_feature(theta))
+                .fold((std::f64::INFINITY, std::f64::NEG_INFINITY),
+                             |(min, max), x| {
+                                 (if x < min {x} else {min},
+                                  if x > max {x} else {max})
+            })
+        }
+    }
 
     #[test]
     fn tree() {

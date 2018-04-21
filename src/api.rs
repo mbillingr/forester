@@ -21,7 +21,7 @@ pub mod extra_trees_regressor {
     use std::f64;
     use rand::Rng;
     use super::*;
-    use ::{AsTrainingData, BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, SampleDescription, Split, TrainingData};
+    use ::{AsTrainingData, BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, IntoSample, SampleDescription, Split, TrainingData};
     use array_ops::Partition;
     use iter_mean::IterMean;
 
@@ -50,54 +50,27 @@ pub mod extra_trees_regressor {
 
     // TODO: these impls just scream for macros
 
-    impl<'a, X> SampleDescription for &'a[X]
+    impl<'a, X> IntoSample for &'a[X]
         where X: Clone + PartialOrd + SampleRange
     {
-        type ThetaSplit = usize;
-        type ThetaLeaf = f64;
-        type Feature = X;
-        type Prediction = f64;
-
-        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
-            self[*theta].clone()
-        }
-
-        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
-            *w
+        type Description = Sample<'a, X, ()>;
+        fn into_sample(self) -> Self::Description {
+            Sample {
+                x: self,
+                y: ()
+            }
         }
     }
 
-    impl<X> SampleDescription for [X]
+    impl<'a, X> IntoSample for &'a[X; 1]
         where X: Clone + PartialOrd + SampleRange
     {
-        type ThetaSplit = usize;
-        type ThetaLeaf = f64;
-        type Feature = X;
-        type Prediction = f64;
-
-        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
-            self[*theta].clone()
-        }
-
-        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
-            *w
-        }
-    }
-
-    impl<X> SampleDescription for [X; 1]
-        where X: Clone + PartialOrd + SampleRange
-    {
-        type ThetaSplit = usize;
-        type ThetaLeaf = f64;
-        type Feature = X;
-        type Prediction = f64;
-
-        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
-            self[*theta].clone()
-        }
-
-        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
-            *w
+        type Description = Sample<'a, X, ()>;
+        fn into_sample(self) -> Self::Description {
+            Sample {
+                x: self,
+                y: ()
+            }
         }
     }
 
