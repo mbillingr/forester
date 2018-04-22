@@ -12,9 +12,8 @@ use forester::{
     BestRandomSplit,
     DeterministicForestBuilder,
     DeterministicTreeBuilder,
-    SampleDescription,
-    Split,
-    TrainingData};
+    data::{SampleDescription, TrainingData},
+    Split};
 use forester::array_ops::Partition;
 use forester::iter_mean::IterMean;
 

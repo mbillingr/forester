@@ -11,13 +11,12 @@ use rand::{thread_rng, Rng};
 use forester::{
     array_ops::Partition,
     categorical::{Categorical, CatCount},
+    data::{SampleDescription, TrainingData},
     iter_mean::IterMean,
     BestRandomSplit,
     DeterministicForestBuilder,
     DeterministicTreeBuilder,
-    SampleDescription,
-    Split,
-    TrainingData};
+    Split};
 
 #[derive(Copy, Clone)]
 enum Classes {

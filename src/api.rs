@@ -10,10 +10,11 @@ use vec2d::Vec2D;
 
 
 pub mod extra_trees_regressor {
+    use super::*;
     use std::f64;
     use rand::Rng;
-    use super::*;
-    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, SampleDescription, Split, TrainingData};
+    use data::{SampleDescription, TrainingData};
+    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, Split};
     use array_ops::Partition;
     use iter_mean::IterMean;
 
@@ -144,7 +145,8 @@ pub mod extra_trees_classifier {
     use std::f64;
     use rand::Rng;
     use categorical::{Categorical, CatCount};
-    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, SampleDescription, Split, TrainingData};
+    use data::{SampleDescription, TrainingData};
+    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, Split};
     use array_ops::Partition;
     use iter_mean::IterMean;
 
