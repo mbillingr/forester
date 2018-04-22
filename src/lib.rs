@@ -6,28 +6,15 @@ pub mod array_ops;
 pub mod categorical;
 pub mod data;
 pub mod iter_mean;
+pub mod split;
 pub mod vec2d;
 
 
 use std::marker::PhantomData;
-use rand::{thread_rng, Rng};
 
 use data::{SampleDescription, TrainingData};
 use iter_mean::IterMean;
-
-pub struct Split<Theta, Threshold> {
-    pub theta: Theta,
-    pub threshold: Threshold,
-}
-
-/// Find split
-pub trait SplitFinder
-{
-    fn find_split<Sample: SampleDescription,
-                  Training: ?Sized + TrainingData<Sample>>(&self,
-                                                           data: &mut Training)
-        -> Option<Split<Sample::ThetaSplit, Sample::Feature>>;
-}
+use split::{Split, SplitFinder};
 
 /// A decision tree node.
 ///
@@ -41,7 +28,9 @@ pub enum Node<T>
     Leaf(T::ThetaLeaf),
 }
 
-/// The usual type of decision tree. Splits are perfect - In contrast to probabilistic trees, a
+/// A deterministic decision tree.
+///
+/// Splits are perfect - In contrast to probabilistic trees, a
 /// sample deterministically goes down exactly one side of a split.
 pub struct DeterministicTree<Sample>
     where Sample: SampleDescription
@@ -90,61 +79,6 @@ impl<Sample> DeterministicTree<Sample>
                 &Node::Split{..} => println!("Split Node"),
             }
         }
-    }
-}
-
-
-pub struct BestRandomSplit {
-    n_splits: usize,
-}
-
-impl BestRandomSplit {
-    pub fn new(n_splits: usize) -> Self {
-        BestRandomSplit {
-            n_splits
-        }
-    }
-}
-
-impl SplitFinder for BestRandomSplit
-{
-    fn find_split<Sample, Training>(&self, data: &mut Training) -> Option<Split<Sample::ThetaSplit, Sample::Feature>>
-        where Sample: SampleDescription,
-              Training: ?Sized + TrainingData<Sample>
-    {
-        let n = data.n_samples() as f64;
-        let mut best_criterion = data.split_criterion();
-        let mut best_split = None;
-
-        let mut rng = thread_rng();
-
-        for _ in 0..self.n_splits {
-            let theta = data.gen_split_feature();
-
-            let (min, max) = data.feature_bounds(&theta);
-
-            let threshold = rng.gen_range(min, max);
-
-            let split = Split{theta, threshold};
-            let (left, right) = data.partition_data(&split);
-
-            let left_crit = left.split_criterion() * left.n_samples() as f64;
-            let right_crit = right.split_criterion()* right.n_samples() as f64;
-            let criterion = (left_crit + right_crit) / n;
-
-            if criterion <= best_criterion {
-                best_criterion = criterion;
-                best_split = Some(split);
-            }
-
-            // stop early if we find a perfect split
-            // TODO: tolerance rather than exact comparison
-            if best_criterion == 0.0 {
-                break
-            }
-        }
-
-        best_split
     }
 }
 
@@ -296,7 +230,10 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
 mod tests {
     use super::*;
 
+    use rand::{thread_rng, Rng};
+
     use array_ops::Partition;
+    use split::BestRandomSplit;
 
     impl<'a, T> SampleDescription for (T, &'a[f64]) {
         type ThetaSplit = usize;
@@ -366,9 +303,7 @@ mod tests {
         let dtb = DeterministicTreeBuilder {
             _p: PhantomData,
             min_samples_split: 2,
-            split_finder: BestRandomSplit {
-                n_splits: 1,
-            }
+            split_finder: BestRandomSplit::new(1),
         };
 
         let tree = dtb.fit(data);

@@ -13,10 +13,11 @@ pub mod extra_trees_regressor {
     use super::*;
     use std::f64;
     use rand::Rng;
-    use data::{SampleDescription, TrainingData};
-    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, Split};
+    use ::{DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder};
     use array_ops::Partition;
+    use data::{SampleDescription, TrainingData};
     use iter_mean::IterMean;
+    use split::{BestRandomSplit, Split};
 
     #[derive(Debug)]
     pub struct Sample<'a, X: 'a, Y> {
@@ -145,10 +146,11 @@ pub mod extra_trees_classifier {
     use std::f64;
     use rand::Rng;
     use categorical::{Categorical, CatCount};
-    use data::{SampleDescription, TrainingData};
-    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, Split};
+    use ::{DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder};
     use array_ops::Partition;
+    use data::{SampleDescription, TrainingData};
     use iter_mean::IterMean;
+    use split::{BestRandomSplit, Split};
 
     #[derive(Debug, Copy, Clone)]
     pub struct Classes(pub u8);

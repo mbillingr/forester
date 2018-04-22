@@ -9,11 +9,10 @@ use std::iter::Sum;
 use rand::{thread_rng, Rng};
 
 use forester::{
-    BestRandomSplit,
     DeterministicForestBuilder,
     DeterministicTreeBuilder,
     data::{SampleDescription, TrainingData},
-    Split};
+    split::{BestRandomSplit,Split}};
 use forester::array_ops::Partition;
 use forester::iter_mean::IterMean;
 

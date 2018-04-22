@@ -4,7 +4,7 @@
 
 use rand::distributions::range::SampleRange;
 
-use Split;
+use split::Split;
 
 /// Data sample used with decision trees
 pub trait SampleDescription {

@@ -13,10 +13,9 @@ use forester::{
     categorical::{Categorical, CatCount},
     data::{SampleDescription, TrainingData},
     iter_mean::IterMean,
-    BestRandomSplit,
+    split::{BestRandomSplit, Split},
     DeterministicForestBuilder,
-    DeterministicTreeBuilder,
-    Split};
+    DeterministicTreeBuilder};
 
 #[derive(Copy, Clone)]
 enum Classes {
