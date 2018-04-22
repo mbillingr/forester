@@ -9,6 +9,8 @@ pub mod iter_mean;
 pub mod split;
 pub mod vec2d;
 
+mod testdata;
+
 
 use std::marker::PhantomData;
 
@@ -229,75 +231,20 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use rand::{thread_rng, Rng};
-
-    use array_ops::Partition;
     use split::BestRandomSplit;
-
-    impl<'a, T> SampleDescription for (T, &'a[f64]) {
-        type ThetaSplit = usize;
-        type ThetaLeaf = f64;
-        type Feature = f64;
-        type Prediction = f64;
-
-        fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
-            self.1[*theta]
-        }
-
-        fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
-            *w
-        }
-    }
-
-    impl<'a> TrainingData<(f64, &'a[f64])> for [(f64, &'a[f64])] {
-        fn n_samples(&self) -> usize {
-            self.len()
-        }
-
-        fn gen_split_feature(&self) -> usize {
-            thread_rng().gen_range(0, self[0].1.len())
-        }
-
-        fn train_leaf_predictor(&self) -> f64 {
-            self.iter().map(|&(y, _)| y).sum::<f64>() / self.len() as f64
-        }
-
-        /// Partition data set in-place according to a split
-        fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
-            let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-            self.split_at_mut(i)
-        }
-
-        /// Compute split criterion
-        fn split_criterion(&self) -> f64 {
-            let mean = self.iter().map(|&(y, _)| y).sum::<f64>() / self.len() as f64;
-            self.iter().map(|&(y, _)| y - mean).map(|ym| ym * ym).sum::<f64>() / self.len() as f64
-        }
-
-        /// Return minimum and maximum value of a feature
-        fn feature_bounds(&self, theta: &usize) -> (f64, f64) {
-            self.iter()
-                .map(|sample| sample.sample_as_split_feature(theta))
-                .fold((std::f64::INFINITY, std::f64::NEG_INFINITY),
-                      |(min, max), x| {
-                          (if x < min {x} else {min},
-                           if x > max {x} else {max})
-                      })
-        }
-    }
+    use testdata::Sample;
 
     #[test]
     fn tree() {
-        let data: &mut [(f64, &[f64])] = &mut [
-            (1.0, &[0.0]),
-            (2.0, &[1.0]),
-            (1.0, &[2.0]),
-            (2.0, &[3.0]),
-            (11.0, &[4.0]),
-            (12.0, &[5.0]),
-            (11.0, &[6.0]),
-            (12.0, &[7.0]),
+        let data: &mut [_] = &mut [
+            Sample::new(&[0.0], 1.0),
+            Sample::new(&[1.0], 2.0),
+            Sample::new(&[2.0], 1.0),
+            Sample::new(&[3.0], 2.0),
+            Sample::new(&[4.0], 11.0),
+            Sample::new(&[5.0], 12.0),
+            Sample::new(&[6.0], 11.0),
+            Sample::new(&[7.0], 12.0),
         ];
 
         let dtb = DeterministicTreeBuilder {
@@ -309,7 +256,7 @@ mod tests {
         let tree = dtb.fit(data);
 
         for sample in data {
-            assert_eq!(tree.predict(sample), sample.0);
+            assert_eq!(tree.predict(sample), sample.y);
         }
 
     }

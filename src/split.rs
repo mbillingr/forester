@@ -83,3 +83,40 @@ impl SplitFinder for BestRandomSplit
         best_split
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use split::BestRandomSplit;
+    use testdata::Sample;
+
+    #[test]
+    fn best_random_split() {
+        let data: &mut [_] = &mut [
+            Sample::new(&[0.0], 1.0),
+            Sample::new(&[1.0], 2.0),
+        ];
+        let spl = BestRandomSplit::new(1);
+        let split = spl.find_split(data).unwrap();
+        assert_eq!(split.theta, 0);
+        assert!(split.threshold >= 0.0);
+        assert!(split.threshold <= 1.0);
+
+        let data: &mut [_] = &mut [
+            Sample::new(&[41.0, 0.0], 1.0),
+            Sample::new(&[41.0, 1.0], 2.0),
+            Sample::new(&[43.0, 2.0], 1.0),
+            Sample::new(&[43.0, 3.0], 2.0),
+            Sample::new(&[41.0, 4.0], 11.0),
+            Sample::new(&[41.0, 5.0], 12.0),
+            Sample::new(&[43.0, 6.0], 11.0),
+            Sample::new(&[43.0, 7.0], 12.0),
+        ];
+        let spl = BestRandomSplit::new(100);
+        let split = spl.find_split(data).unwrap();
+        assert_eq!(split.theta, 1);
+        assert!(split.threshold >= 3.0);
+        assert!(split.threshold <= 4.0);
+    }
+}
