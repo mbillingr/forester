@@ -140,10 +140,11 @@ pub mod extra_trees_regressor {
 
 
 pub mod extra_trees_classifier {
+    use super::*;
     use std::f64;
     use rand::Rng;
-    use super::*;
-    use ::{BestRandomSplit, Categorical, CatCount, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, SampleDescription, Split, TrainingData};
+    use categorical::{Categorical, CatCount};
+    use ::{BestRandomSplit, DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder, SampleDescription, Split, TrainingData};
     use array_ops::Partition;
     use iter_mean::IterMean;
 
@@ -387,7 +388,7 @@ mod tests {
         use super::extra_trees_classifier::Classes;
         use super::extra_trees_classifier::ExtraTreesClassifier;
         use super::extra_trees_classifier::Sample;
-        use CatCount;
+        use categorical::CatCount;
         use vec2d::Vec2D;
 
         let x = Vec2D::from_slice(&[1, 2, 3, 7, 8, 9], 1);

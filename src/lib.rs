@@ -3,6 +3,7 @@ extern crate rand;
 
 pub mod api;
 pub mod array_ops;
+pub mod categorical;
 pub mod iter_mean;
 pub mod vec2d;
 
@@ -14,23 +15,6 @@ use iter_mean::IterMean;
 pub struct Split<Theta, Threshold> {
     pub theta: Theta,
     pub threshold: Threshold,
-}
-
-/// Trait for categorical variables
-pub trait Categorical {
-    /// return unique id of given category
-    fn as_usize(&self) -> usize;
-
-    /// total number of categories
-    fn n_categories(&self) -> Option<usize>;
-}
-
-pub trait CatCount<C>
-    where C: Categorical
-{
-    fn add(&mut self, c: C);
-    fn add_n(&mut self, c: C, n: usize);
-    fn probability(&self, c: C) -> f64;
 }
 
 /// Trait for a dataset that can be used for training a decision tree

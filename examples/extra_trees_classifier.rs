@@ -9,16 +9,15 @@ use std::iter::Sum;
 use rand::{thread_rng, Rng};
 
 use forester::{
-    Categorical,
-    CatCount,
+    array_ops::Partition,
+    categorical::{Categorical, CatCount},
+    iter_mean::IterMean,
     BestRandomSplit,
     DeterministicForestBuilder,
     DeterministicTreeBuilder,
     SampleDescription,
     Split,
     TrainingData};
-use forester::array_ops::Partition;
-use forester::iter_mean::IterMean;
 
 #[derive(Copy, Clone)]
 enum Classes {
