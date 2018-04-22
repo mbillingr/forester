@@ -1,21 +1,11 @@
 use std::cmp;
-use std::iter::{Map, Sum};
-use std::slice::Iter;
+use std::iter::Sum;
 
 use num_traits::Bounded;
 
-use rand::{thread_rng, ThreadRng};
+use rand::thread_rng;
 use rand::distributions::range::SampleRange;
 
-use criteria::GiniCriterion;
-use d_tree::{DeterministicTree, DeterministicTreeBuilder};
-use datasets::TupleSample;
-use ensemble::{Ensemble, EnsembleBuilder};
-use features::ColumnSelect;
-use get_item::GetItem;
-use predictors::{CategoricalProbabilities, ClassPredictor};
-use splitters::{BestRandomSplit, ThresholdSplitter};
-use traits::LearnerMut;
 use vec2d::Vec2D;
 
 

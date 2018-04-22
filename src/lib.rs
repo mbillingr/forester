@@ -23,7 +23,6 @@ pub use traits::*;
 
 use std::marker::PhantomData;
 use rand::{thread_rng, Rng};
-use array_ops::Partition;
 use iter_mean::IterMean;
 
 pub struct Split<Theta, Threshold> {
@@ -366,6 +365,8 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use array_ops::Partition;
 
     impl<'a, T> SampleDescription for (T, &'a[f64]) {
         type ThetaSplit = usize;

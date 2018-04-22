@@ -8,7 +8,6 @@ use gnuplot::*;
 
 use rand::{thread_rng, Rng};
 
-use forester::traits::{LearnerMut, Predictor};
 use forester::api::extra_trees_regressor::{ExtraTreesRegressor, Sample};
 use forester::vec2d::Vec2D;
 
