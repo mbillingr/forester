@@ -9,6 +9,8 @@ use std::iter::Sum;
 use rand::{thread_rng, Rng};
 
 use forester::{
+    Categorical,
+    CatCount,
     BestRandomSplit,
     DeterministicForestBuilder,
     DeterministicTreeBuilder,
@@ -18,13 +20,21 @@ use forester::{
 use forester::array_ops::Partition;
 use forester::iter_mean::IterMean;
 
-// TODO: Some of this structs/impls should likely go into the library or into an examples-common module
-
 #[derive(Copy, Clone)]
 enum Classes {
     Red,
     Green,
     Blue,
+}
+
+impl Categorical for Classes {
+    fn as_usize(&self) -> usize {
+        *self as usize
+    }
+
+    fn n_categories(&self) -> Option<usize> {
+        Some(3)
+    }
 }
 
 #[derive(Clone)]
@@ -38,12 +48,18 @@ impl ClassCounts {
             p: [0; 3]
         }
     }
+}
 
+impl CatCount<Classes> for ClassCounts {
     fn add(&mut self, c: Classes) {
         self.p[c as usize] += 1;
     }
 
-    fn prob(&self, c: Classes) -> f64{
+    fn add_n(&mut self, c: Classes, n: usize) {
+        self.p[c as usize] += n;
+    }
+
+    fn probability(&self, c: Classes) -> f64{
         self.p[c as usize] as f64 / self.p.iter().sum::<usize>() as f64
     }
 }
@@ -110,9 +126,9 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
 
     fn split_criterion(&self) -> f64 {
         let counts: ClassCounts = self.iter().map(|sample| &sample.y).sum();
-        let p_red = counts.prob(Classes::Red);
-        let p_green = counts.prob(Classes::Green);
-        let p_blue = counts.prob(Classes::Blue);
+        let p_red = counts.probability(Classes::Red);
+        let p_green = counts.probability(Classes::Green);
+        let p_blue = counts.probability(Classes::Blue);
         let gini = p_red * (1.0 - p_red) + p_green * (1.0 - p_green) + p_blue * (1.0 - p_blue);
         gini
     }
@@ -187,9 +203,9 @@ fn main() {
         for &x in x_grid.iter() {
             let sx = [x, y];
             let c = forest.predict(&Sample{x: sx, y: ()});
-            z.push(c.prob(Classes::Red));
-            z.push(c.prob(Classes::Green));
-            z.push(c.prob(Classes::Blue));
+            z.push(c.probability(Classes::Red));
+            z.push(c.probability(Classes::Green));
+            z.push(c.probability(Classes::Blue));
         }
     }
 
