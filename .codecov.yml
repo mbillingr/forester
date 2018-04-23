@@ -1,4 +1,6 @@
 codecov:
   ci:
     - !appveyor                # ignore CI builds by AppVeyor
-    
+
+ignore:
+  - "examples"
