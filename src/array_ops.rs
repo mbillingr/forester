@@ -2,8 +2,6 @@ use std::iter;
 use std::mem;
 use std::ops;
 
-use predictors::CategoricalProbabilities;
-
 pub trait Dot<B: ?Sized> {
     type Output;
     fn dot(&self, other: &B) -> Self::Output;
@@ -142,16 +140,6 @@ impl IterMean<f64> for f64 {
             n += 1
         }
         sum / n as f64
-    }
-}
-
-impl IterMean for CategoricalProbabilities {
-    fn mean<I: Iterator<Item=CategoricalProbabilities>>(iter: I) -> Self {
-        let mut total = CategoricalProbabilities::new();
-        for i in iter {
-            total.add(&i);
-        }
-        total
     }
 }
 
