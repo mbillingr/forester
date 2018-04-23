@@ -13,7 +13,7 @@ matrix:
     - rust: nightly
   fast_finish: true
   
-after_script: |
+before_script: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     cargo install cargo-tarpaulin
   fi
