@@ -23,7 +23,11 @@ impl<T> Vec2D<T> {
 
     #[inline(always)]
     pub fn n_rows(&self) -> usize {
-        self.data.len() / self.n_columns
+        if self.data.is_empty() {
+            0
+        } else {
+            self.data.len() / self.n_columns
+        }
     }
 
     pub fn iter<'a>(&'a self) -> slice::Chunks<'a, T> {
@@ -66,6 +70,25 @@ impl<T> ops::Index<usize> for Vec2D<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn construction() {
+        let x: Vec2D<f64> = Vec2D::new();
+        assert_eq!(x.n_cols(), 0);
+        assert_eq!(x.n_rows(), 0);
+
+        let y = Vec2D::from_slice(&[1, 2, 3, 4], 1);
+        assert_eq!(y.n_cols(), 1);
+        assert_eq!(y.n_rows(), 4);
+
+        let y = Vec2D::from_slice(&[1, 2, 3, 4], 2);
+        assert_eq!(y.n_cols(), 2);
+        assert_eq!(y.n_rows(), 2);
+
+        let y = Vec2D::from_slice(&[1, 2, 3, 4], 4);
+        assert_eq!(y.n_cols(), 4);
+        assert_eq!(y.n_rows(), 1);
+    }
 
     #[test]
     fn iteration() {
