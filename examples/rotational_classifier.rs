@@ -8,11 +8,9 @@ use std::iter::Sum;
 
 use rand::{thread_rng, Rng};
 
-use forester::{
-    DeterministicForestBuilder,
-    DeterministicTreeBuilder,
-    data::{SampleDescription, TrainingData},
-    split::{BestRandomSplit,Split}};
+use forester::{DeterministicForestBuilder, DeterministicTreeBuilder};
+use forester::data::{SampleDescription, TrainingData};
+use forester::split::{BestRandomSplit,Split};
 use forester::array_ops::Partition;
 use forester::iter_mean::IterMean;
 

@@ -8,14 +8,12 @@ use std::iter::Sum;
 
 use rand::{thread_rng, Rng};
 
-use forester::{
-    array_ops::Partition,
-    categorical::{Categorical, CatCount},
-    data::{SampleDescription, TrainingData},
-    iter_mean::IterMean,
-    split::{BestRandomSplit, Split},
-    DeterministicForestBuilder,
-    DeterministicTreeBuilder};
+use forester::array_ops::Partition;
+use forester::categorical::{Categorical, CatCount};
+use forester::data::{SampleDescription, TrainingData};
+use forester::iter_mean::IterMean;
+use forester::split::{BestRandomSplit, Split};
+use forester::{DeterministicForestBuilder, DeterministicTreeBuilder};
 
 #[derive(Copy, Clone)]
 enum Classes {

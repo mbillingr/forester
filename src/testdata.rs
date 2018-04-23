@@ -1,10 +1,7 @@
 
 use num_traits::Bounded;
-use rand::{
-    distributions::range::SampleRange,
-    thread_rng,
-    Rng,
-};
+use rand::distributions::range::SampleRange;
+use rand::{thread_rng, Rng};
 
 use array_ops::Partition;
 use data::{SampleDescription, TrainingData};
