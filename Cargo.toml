@@ -7,9 +7,9 @@ homepage = "https://github.com/mbillingr/forester"
 repository = "https://github.com/mbillingr/forester"
 documentation = "https://docs.rs/forester/"
 description = """
-Experimental generic randomized forests of trees.
+A crate for implementing various flavors of random forests and decision trees.
 """
-maintenance = { status = "experimental" }
+#maintenance = { status = "experimental" }
 
 
 [features]
