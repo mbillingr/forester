@@ -1,5 +1,8 @@
 //! A row-major contiguous two-dimensional array type, written `Vec2D<T>`.
 //!
+//! `Vec2D` implements indexing by a tuple `(row, col)` to get a single item, or by a scalar to
+//! get the slice of a row. Iteration is implemented over rows.
+//!
 //! # Examples
 //!
 //! Create an empty [`Vec2D<T>`] with [`new`]:
@@ -106,6 +109,14 @@ impl<T> ops::Index<usize> for Vec2D<T> {
     }
 }
 
+impl<T> ops::Index<(usize, usize)> for Vec2D<T> {
+    type Output = T;
+
+    fn index(&self, (r, c): (usize, usize)) -> &Self::Output {
+        &self.data[r * self.n_columns + c]
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -128,6 +139,11 @@ mod tests {
         let y = Vec2D::from_slice(&[1, 2, 3, 4], 4);
         assert_eq!(y.n_cols(), 4);
         assert_eq!(y.n_rows(), 1);
+
+        let z = Vec2D::from_vec(vec![1, 2, 3, 4], 2);
+        assert_eq!(z.n_cols(), 2);
+        assert_eq!(z.n_rows(), 2);
+        assert_eq!(z[(1, 0)], 3);
     }
 
     #[test]
@@ -159,5 +175,11 @@ mod tests {
         assert_eq!(x[1], [4, 5, 6]);
         assert_eq!(x[2], [7, 8, 9]);
         assert_eq!(x[3], [10, 11, 12]);
+
+        assert_eq!(x[(0, 0)], 1);
+        assert_eq!(x[(1, 1)], 5);
+        assert_eq!(x[(2, 2)], 9);
+        assert_eq!(x[(0, 2)], 3);
+        assert_eq!(x[(3, 0)], 10);
     }
 }
