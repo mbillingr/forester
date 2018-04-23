@@ -1,5 +1,7 @@
 # Forester Changelog
 
+## Master
+
 ## Version 0.0.2
 - New trait/data concept
 - Slightly more documentation
