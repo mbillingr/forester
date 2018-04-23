@@ -2,70 +2,21 @@ extern crate forester;
 extern crate image;
 extern crate rand;
 
+mod common;
+
 use std::f64::consts::PI;
 use std::fs::File;
-use std::iter::Sum;
 
 use rand::{thread_rng, Rng};
 
+use forester::categorical::CatCount;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
 use forester::split::{BestRandomSplit,Split};
 use forester::array_ops::Partition;
-use forester::iter_mean::IterMean;
 
-// TODO: Some of this structs/impls should likely go into the library or into an examples-common module
-
-#[derive(Copy, Clone)]
-enum Classes {
-    Red,
-    Green,
-    Blue,
-}
-
-#[derive(Clone)]
-struct ClassCounts {
-    p: [usize; 3],
-}
-
-impl ClassCounts {
-    fn new() -> Self {
-        ClassCounts {
-            p: [0; 3]
-        }
-    }
-
-    fn add(&mut self, c: Classes) {
-        self.p[c as usize] += 1;
-    }
-
-    fn prob(&self, c: Classes) -> f64 {
-        self.p[c as usize] as f64 / self.p.iter().sum::<usize>() as f64
-    }
-}
-
-impl<'a> Sum<&'a Classes> for ClassCounts {
-    fn sum<I: Iterator<Item=&'a Classes>>(iter: I) -> Self {
-        let mut counts = ClassCounts::new();
-        for c in iter {
-            counts.add(*c);
-        }
-        counts
-    }
-}
-
-impl IterMean<ClassCounts> for ClassCounts {
-    fn mean<I: ExactSizeIterator<Item=ClassCounts>>(iter: I) -> Self {
-        let mut total_counts = ClassCounts::new();
-        for c in iter {
-            for (a, b) in total_counts.p.iter_mut().zip(c.p.iter()) {
-                *a += *b;
-            }
-        }
-        total_counts
-    }
-}
+use common::rgb_classes::{ClassCounts, Classes};
 
 struct Sample<Y> {
     x: [f64; 2],
@@ -108,9 +59,9 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
 
     fn split_criterion(&self) -> f64 {
         let counts: ClassCounts = self.iter().map(|sample| &sample.y).sum();
-        let p_red = counts.prob(Classes::Red);
-        let p_green = counts.prob(Classes::Green);
-        let p_blue = counts.prob(Classes::Blue);
+        let p_red = counts.probability(Classes::Red);
+        let p_green = counts.probability(Classes::Green);
+        let p_blue = counts.probability(Classes::Blue);
         let gini = p_red * (1.0 - p_red) + p_green * (1.0 - p_green) + p_blue * (1.0 - p_blue);
         gini
     }
@@ -185,9 +136,9 @@ fn main() {
         for &x in x_grid.iter() {
             let sx = [x, y];
             let c = forest.predict(&Sample{x: sx, y: ()});
-            z.push(c.prob(Classes::Red));
-            z.push(c.prob(Classes::Green));
-            z.push(c.prob(Classes::Blue));
+            z.push(c.probability(Classes::Red));
+            z.push(c.probability(Classes::Green));
+            z.push(c.probability(Classes::Blue));
         }
     }
 
