@@ -40,7 +40,7 @@ impl ClassCounts {
         self.p[c as usize] += 1;
     }
 
-    fn prob(&self, c: Classes) -> f64{
+    fn prob(&self, c: Classes) -> f64 {
         self.p[c as usize] as f64 / self.p.iter().sum::<usize>() as f64
     }
 }

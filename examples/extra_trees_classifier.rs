@@ -55,7 +55,7 @@ impl CatCount<Classes> for ClassCounts {
         self.p[c as usize] += n;
     }
 
-    fn probability(&self, c: Classes) -> f64{
+    fn probability(&self, c: Classes) -> f64 {
         self.p[c as usize] as f64 / self.p.iter().sum::<usize>() as f64
     }
 }
