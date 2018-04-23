@@ -1,5 +1,8 @@
 //! A row-major contiguous two-dimensional array type, written `Vec2D<T>`.
 //!
+//! `Vec2D` implements indexing by a tuple `(row, col)` to get a single item, or by a scalar to
+//! get the slice of a row. Iteration is implemented over rows.
+//!
 //! # Examples
 //!
 //! Create an empty [`Vec2D<T>`] with [`new`]:
