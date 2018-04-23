@@ -12,11 +12,6 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
-  
-before_script: |
-  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    cargo install cargo-tarpaulin || true
-  fi
 
 cache: cargo
 
@@ -32,7 +27,7 @@ addons:
 
 after_success: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    # bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/master/travis-install.sh)
+    bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/master/travis-install.sh)
 
     # Uncomment the following line for coveralls.io
     # cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
