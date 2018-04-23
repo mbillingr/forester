@@ -13,9 +13,10 @@ pub mod extra_trees_regressor {
     use super::*;
     use std::f64;
     use rand::Rng;
-    use ::{DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder};
     use array_ops::Partition;
     use data::{SampleDescription, TrainingData};
+    use dforest::{DeterministicForest, DeterministicForestBuilder};
+    use dtree::DeterministicTreeBuilder;
     use iter_mean::IterMean;
     use split::{BestRandomSplit, Split};
 
@@ -146,9 +147,10 @@ pub mod extra_trees_classifier {
     use std::f64;
     use rand::Rng;
     use categorical::{Categorical, CatCount};
-    use ::{DeterministicForest, DeterministicForestBuilder, DeterministicTreeBuilder};
     use array_ops::Partition;
     use data::{SampleDescription, TrainingData};
+    use dforest::{DeterministicForest, DeterministicForestBuilder};
+    use dtree::DeterministicTreeBuilder;
     use iter_mean::IterMean;
     use split::{BestRandomSplit, Split};
 

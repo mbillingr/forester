@@ -11,9 +11,10 @@ use rand::{thread_rng, Rng};
 use forester::array_ops::Partition;
 use forester::categorical::{Categorical, CatCount};
 use forester::data::{SampleDescription, TrainingData};
+use forester::dforest::DeterministicForestBuilder;
+use forester::dtree::DeterministicTreeBuilder;
 use forester::iter_mean::IterMean;
 use forester::split::{BestRandomSplit, Split};
-use forester::{DeterministicForestBuilder, DeterministicTreeBuilder};
 
 #[derive(Copy, Clone)]
 enum Classes {
