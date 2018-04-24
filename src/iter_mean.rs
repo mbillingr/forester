@@ -1,4 +1,9 @@
+//! Trait for computing the mean of an iterator's values.
 
+/// Trait for computing the mean of an iterator's values.
+///
+/// The trait is only implemented for floating point primitives (`f32` and `f64`) but also accepts
+/// integer items. (The mean of e.g. `[1, 2, 2]` is not an integer). 
 pub trait IterMean<A=Self>
 {
     fn mean<I: ExactSizeIterator<Item=A>>(iter: I) -> Self;
