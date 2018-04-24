@@ -1,6 +1,6 @@
-/// Deterministic Forest module
-///
-/// A deterministic forest is an ensemble of deterministic decision trees.
+//! Deterministic Forest module
+//!
+//! A deterministic forest is an ensemble of deterministic decision trees.
 
 use data::{SampleDescription, TrainingData};
 use dtree::{DeterministicTree, DeterministicTreeBuilder};
