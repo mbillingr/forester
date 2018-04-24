@@ -1,8 +1,8 @@
-/// Deterministic Tree module
-///
-/// A deterministic tree is a tree where a sample is passed down on exactly one side of each split,
-/// depending on feature and threshold. (This stands in contrast to probabilistic trees, where
-/// samples are passed down both sides with certain probabilities.)
+//! Deterministic Tree module
+//!
+//! A deterministic tree is a tree where a sample is passed down on exactly one side of each split,
+//! depending on feature and threshold. (This stands in contrast to probabilistic trees, where
+//! samples are passed down both sides with certain probabilities.)
 
 use std::marker::PhantomData;
 
