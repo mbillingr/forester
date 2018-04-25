@@ -1,7 +1,10 @@
+//! Various operations on arrays, slices, and vectors.
+
 use std::iter;
 use std::mem;
 use std::ops;
 
+/// Trait that defines a dot product
 pub trait Dot<B: ?Sized> {
     type Output;
     fn dot(&self, other: &B) -> Self::Output;
@@ -127,6 +130,8 @@ impl<T> Partition<T> for [T]
     }
 }
 
+/// Mean of an iterator
+#[deprecated(since="0.0.2", note="use `iter_mean::IterMean` instead")]
 pub trait IterMean<A = Self> {
     fn mean<I: Iterator<Item=A>>(iter: I) -> Self;
 }
