@@ -33,7 +33,7 @@ impl Categorical for Classes {
 }
 
 /// Counter optimized for three classes
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ClassCounts {
     p: [usize; 3],
 }
