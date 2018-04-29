@@ -48,7 +48,7 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
     }
 
     fn train_leaf_predictor(&self) -> ClassCounts {
-        self.iter().map(|sample| &sample.y).sum()
+        self.iter().map(|sample| sample.y).sum()
     }
 
     fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
@@ -57,7 +57,7 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
     }
 
     fn split_criterion(&self) -> f64 {
-        let counts: ClassCounts = self.iter().map(|sample| &sample.y).sum();
+        let counts: ClassCounts = self.iter().map(|sample| sample.y).sum();
         let p_red = counts.probability(Classes::Red);
         let p_green = counts.probability(Classes::Green);
         let p_blue = counts.probability(Classes::Blue);

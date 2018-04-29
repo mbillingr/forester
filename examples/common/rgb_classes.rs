@@ -37,25 +37,29 @@ impl ClassCounts {
     }
 }
 
-impl CatCount<Classes> for ClassCounts {
-    fn add(&mut self, c: Classes) {
-        self.p[c as usize] += 1;
+impl<T> CatCount<T> for ClassCounts
+    where T: Categorical
+{
+    fn add(&mut self, c: T) {
+        self.p[c.as_usize()] += 1;
     }
 
-    fn add_n(&mut self, c: Classes, n: usize) {
-        self.p[c as usize] += n;
+    fn add_n(&mut self, c: T, n: usize) {
+        self.p[c.as_usize()] += n;
     }
 
-    fn probability(&self, c: Classes) -> f64 {
-        self.p[c as usize] as f64 / self.p.iter().sum::<usize>() as f64
+    fn probability(&self, c: T) -> f64 {
+        self.p[c.as_usize()] as f64 / self.p.iter().sum::<usize>() as f64
     }
 }
 
-impl<'a> Sum<&'a Classes> for ClassCounts {
-    fn sum<I: Iterator<Item=&'a Classes>>(iter: I) -> Self {
+impl<T> Sum<T> for ClassCounts
+    where T: Categorical
+{
+    fn sum<I: Iterator<Item=T>>(iter: I) -> Self {
         let mut counts = ClassCounts::new();
         for c in iter {
-            counts.add(*c);
+            counts.add(c);
         }
         counts
     }
