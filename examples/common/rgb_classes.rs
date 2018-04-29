@@ -18,6 +18,15 @@ impl Categorical for Classes {
         *self as usize
     }
 
+    fn from_usize(id: usize) -> Self{
+        match id {
+            0 => Classes::Red,
+            1 => Classes::Green,
+            2 => Classes::Blue,
+            _ => panic!("Invalid class")
+        }
+    }
+
     fn n_categories(&self) -> Option<usize> {
         Some(3)
     }
@@ -50,6 +59,26 @@ impl<T> CatCount<T> for ClassCounts
 
     fn probability(&self, c: T) -> f64 {
         self.p[c.as_usize()] as f64 / self.p.iter().sum::<usize>() as f64
+    }
+
+    fn most_frequent(&self) -> T {
+        let a = self.p[0];
+        let b = self.p[1];
+        let c = self.p[2];
+
+        if a > b {
+            if a > c {
+                T::from_usize(0)
+            } else {
+                T::from_usize(2)
+            }
+        } else {
+            if b > c {
+                T::from_usize(1)
+            } else {
+                T::from_usize(2)
+            }
+        }
     }
 }
 

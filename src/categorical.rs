@@ -9,6 +9,9 @@ pub trait Categorical {
     /// Return unique id of present instance.
     fn as_usize(&self) -> usize;
 
+    /// Create category from given id.
+    fn from_usize(id: usize) -> Self;
+
     /// Total number of categories.
     ///
     /// This function can return `None` if the number is not known (e.g. number of classes depends
@@ -28,4 +31,7 @@ pub trait CatCount<C>
 
     /// Return probability (relative count) of given category.
     fn probability(&self, c: C) -> f64;
+
+    /// Return the most frequent category.
+    fn most_frequent(&self) -> C;
 }

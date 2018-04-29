@@ -162,6 +162,11 @@ pub mod extra_trees_classifier {
             self.0 as usize
         }
 
+        fn from_usize(id: usize) -> Self {
+            assert!(id < 256);
+            Classes(id as u8)
+        }
+
         fn n_categories(&self) -> Option<usize> {
             // We don't know the total number of classes
             None
@@ -211,6 +216,19 @@ pub mod extra_trees_classifier {
             } else {
                 0.0
             }
+        }
+
+        fn most_frequent(&self) -> Classes {
+            let mut n = 0;
+            let mut c = 0;
+            for i in 0..self.counts.len() {
+                // TODO: handle ties?
+                if self.counts[i] > n {
+                    n = self.counts[i];
+                    c = i;
+                }
+            }
+            Classes::from_usize(c)
         }
     }
 
