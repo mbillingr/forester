@@ -121,6 +121,7 @@ fn main() {
         100,
         DeterministicTreeBuilder::new(
             2,
+            None,
             BestRandomSplit::new(100)
         )
     ).fit(&mut data as &mut [_]);

@@ -120,6 +120,7 @@ pub struct DeterministicTreeBuilder<SF, Sample>
 {
     _p: PhantomData<Sample>,
     min_samples_split: usize,
+    max_depth: Option<usize>,
     split_finder: SF,
 }
 
@@ -127,10 +128,11 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
     where SF: SplitFinder,
           Sample: SampleDescription
 {
-    pub fn new(min_samples_split: usize, split_finder: SF) -> Self {
+    pub fn new(min_samples_split: usize, max_depth: Option<usize>, split_finder: SF) -> Self {
         DeterministicTreeBuilder {
             min_samples_split,
             split_finder,
+            max_depth,
             _p: PhantomData,
         }
     }
@@ -139,7 +141,7 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
         where Training: ?Sized + TrainingData<Sample>
     {
         let mut nodes = vec![Node::Invalid];
-        self.recursive_fit(&mut nodes, data, 0);
+        self.recursive_fit(&mut nodes, data, 0, 0);
         DeterministicTree {
             nodes
         }
@@ -148,13 +150,22 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
     fn recursive_fit<Training>(&self,
                                nodes: &mut Vec<Node<Sample>>,
                                data: &mut Training,
-                               node: usize)
+                               node: usize,
+                               depth: usize)
         where Training: ?Sized + TrainingData<Sample>
     {
+        if let Some(md) = self.max_depth {
+            if depth >= md {
+                nodes[node] = Node::Leaf(data.train_leaf_predictor());
+                return
+            }
+        }
+
         if data.n_samples() < self.min_samples_split {
             nodes[node] = Node::Leaf(data.train_leaf_predictor());
             return
         }
+
         let split = self.split_finder.find_split(data);
         match split {
             None => nodes[node] = Node::Leaf(data.train_leaf_predictor()),
@@ -163,8 +174,8 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
 
                 let (l, r) = Self::split_node(nodes, node, split);
 
-                self.recursive_fit(nodes, left, l);
-                self.recursive_fit(nodes, right, r);
+                self.recursive_fit(nodes, left, l, depth + 1);
+                self.recursive_fit(nodes, right, r, depth + 1);
             }
         }
     }
@@ -209,6 +220,7 @@ mod tests {
         let dtb = DeterministicTreeBuilder {
             _p: PhantomData,
             min_samples_split: 2,
+            max_depth: None,
             split_finder: BestRandomSplit::new(1),
         };
 

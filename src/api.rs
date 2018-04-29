@@ -90,6 +90,7 @@ pub mod extra_trees_regressor {
         n_estimators: usize,
         n_splits: usize,
         min_samples_split: usize,
+        max_depth: Option<usize>,
     }
 
     impl ExtraTreesRegressor {
@@ -112,6 +113,11 @@ pub mod extra_trees_regressor {
             self
         }
 
+        pub fn max_depth(mut self, d: usize) -> Self {
+            self.max_depth = Some(d);
+            self
+        }
+
         pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<f64>) -> DeterministicForest<Sample<'b, T, f64>>
             where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
         {
@@ -124,6 +130,7 @@ pub mod extra_trees_regressor {
                 self.n_estimators,
                 DeterministicTreeBuilder::new(
                     self.min_samples_split,
+                    self.max_depth,
                     BestRandomSplit::new(self.n_splits)
                 )
             ).fit(&mut data[..])
@@ -136,6 +143,7 @@ pub mod extra_trees_regressor {
                 n_estimators: 10,
                 n_splits: 1,
                 min_samples_split: 2,
+                max_depth: None,
             }
         }
     }
@@ -330,6 +338,7 @@ pub mod extra_trees_classifier {
         n_estimators: usize,
         n_splits: usize,
         min_samples_split: usize,
+        max_depth: Option<usize>,
     }
 
     impl ExtraTreesClassifier {
@@ -352,6 +361,11 @@ pub mod extra_trees_classifier {
             self
         }
 
+        pub fn max_depth(mut self, d: usize) -> Self {
+            self.max_depth = Some(d);
+            self
+        }
+
         pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<u8>) -> DeterministicForest<Sample<'b, T, Classes>>
             where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
         {
@@ -364,6 +378,7 @@ pub mod extra_trees_classifier {
                 self.n_estimators,
                 DeterministicTreeBuilder::new(
                     self.min_samples_split,
+                    self.max_depth,
                     BestRandomSplit::new(self.n_splits)
                 )
             ).fit(&mut data[..])
@@ -376,6 +391,7 @@ pub mod extra_trees_classifier {
                 n_estimators: 10,
                 n_splits: 1,
                 min_samples_split: 2,
+                max_depth: None,
             }
         }
     }
