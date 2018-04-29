@@ -4,6 +4,7 @@
 //! depending on feature and threshold. (This stands in contrast to probabilistic trees, where
 //! samples are passed down both sides with certain probabilities.)
 
+use std::fmt;
 use std::marker::PhantomData;
 
 use data::{SampleDescription, TrainingData};
@@ -17,7 +18,7 @@ pub enum Node<T>
     where T: SampleDescription
 {
     Invalid,  // placeholder used during tree construction
-Split{ theta: T::ThetaSplit, threshold: T::Feature, left: usize, right: usize},
+    Split{ theta: T::ThetaSplit, threshold: T::Feature, left: usize, right: usize},
     Leaf(T::ThetaLeaf),
 }
 
@@ -26,6 +27,58 @@ pub struct DeterministicTree<Sample>
     where Sample: SampleDescription
 {
     nodes: Vec<Node<Sample>>
+}
+
+impl<Sample: SampleDescription> fmt::Debug for DeterministicTree<Sample>
+    where Sample::ThetaLeaf: fmt::Debug,
+          Sample::ThetaSplit: fmt::Debug,
+          Sample::Feature: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Tree: ")?;
+        let mut prefix = vec![];
+        self.recursive_fmt(0, &mut prefix, false, f)
+    }
+}
+
+impl<Sample: SampleDescription> DeterministicTree<Sample>
+    where Sample::ThetaLeaf: fmt::Debug,
+          Sample::ThetaSplit: fmt::Debug,
+          Sample::Feature: fmt::Debug,
+{
+    fn recursive_fmt(&self, n: usize, prefix: &mut Vec<&str>, bottom: bool, f: &mut fmt::Formatter) -> fmt::Result {
+        let node = &self.nodes[n];
+
+        writeln!(f)?;
+        for p in prefix.iter() {
+            write!(f, "{}", p)?;
+        }
+
+        if bottom {
+            prefix.pop();
+            prefix.push("    ");
+        }
+
+        match *node {
+            Node::Invalid => write!(f, " *** Invalid ***")?,
+            Node::Leaf(ref l) => write!(f, "{:?}", l)?,
+            Node::Split{ref theta, ref threshold, left, right} => {
+                write!(f, "({:?}) <= {:?}", theta, threshold)?;
+                if let Some(&" +--") = prefix.last() {
+                    prefix.pop();
+                    prefix.push(" |  ");
+                }
+                prefix.push(" +--");
+                self.recursive_fmt(left, prefix, false, f)?;
+                prefix.pop();
+                prefix.push(" +--");
+                self.recursive_fmt(right, prefix, true, f)?;
+                prefix.pop();
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl<Sample> DeterministicTree<Sample>

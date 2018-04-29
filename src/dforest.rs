@@ -2,18 +2,30 @@
 //!
 //! A deterministic forest is an ensemble of deterministic decision trees.
 
+use std::fmt;
+
 use data::{SampleDescription, TrainingData};
 use dtree::{DeterministicTree, DeterministicTreeBuilder};
 use iter_mean::IterMean;
 use split::SplitFinder;
 
+/// An ensemble of deterministic decision trees.
 pub struct DeterministicForest<Sample>
     where Sample: SampleDescription
 {
     estimators: Vec<DeterministicTree<Sample>>
 }
 
-/// An ensemble of deterministic decision trees.
+impl<Sample: SampleDescription> fmt::Debug for DeterministicForest<Sample>
+    where Sample::ThetaLeaf: fmt::Debug,
+          Sample::ThetaSplit: fmt::Debug,
+          Sample::Feature: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Forest: {:?}", self.estimators)
+    }
+}
+
 impl<Sample> DeterministicForest<Sample>
     where Sample: SampleDescription
 {
