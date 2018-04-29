@@ -130,24 +130,6 @@ impl<T> Partition<T> for [T]
     }
 }
 
-/// Mean of an iterator
-#[deprecated(since="0.0.2", note="use `iter_mean::IterMean` instead")]
-pub trait IterMean<A = Self> {
-    fn mean<I: Iterator<Item=A>>(iter: I) -> Self;
-}
-
-impl IterMean<f64> for f64 {
-    fn mean<I: Iterator<Item=f64>>(iter: I) -> Self {
-        let mut sum = 0.0;
-        let mut n = 0;
-        for i in iter {
-            sum += i;
-            n += 1
-        }
-        sum / n as f64
-    }
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -211,12 +193,5 @@ mod tests {
         let i = x.partition(|&xi| xi <= 3);
         assert_eq!(i, 4);
         assert_eq!(x, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    }
-
-    #[test]
-    fn mean() {
-        let x = vec![1.0, 2.0, 3.0, 4.0];
-        let m: f64 = IterMean::mean(x.into_iter());
-        assert_eq!(m, 2.5);
     }
 }
