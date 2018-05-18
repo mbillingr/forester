@@ -27,6 +27,7 @@ criterion = { version = "0.2", default-features = false }
 gnuplot = "0.0.24"
 image = "0.18"
 mldata = { git = "https://github.com/mbillingr/mldata" }
+ndarray = "0.11"
 
 
 [[bench]]
@@ -53,6 +54,10 @@ path = "examples/extra_trees_classifier.rs"
 [[example]]
 name = "iris"
 path = "examples/iris.rs"
+
+[[example]]
+name = "mnist"
+path = "examples/mnist.rs"
 
 [[example]]
 name = "rotational_classifier"
