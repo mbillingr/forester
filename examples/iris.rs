@@ -1,5 +1,5 @@
 extern crate forester;
-extern crate mldata;
+extern crate openml;
 extern crate rand;
 
 mod common;
@@ -15,50 +15,68 @@ use forester::dtree::DeterministicTreeBuilder;
 use forester::split::{BestRandomSplit, Split};
 use forester::categorical::{Categorical, CatCount};
 
-use mldata::uci_iris;
+use openml::OpenML;
 
 use common::rgb_classes::ClassCounts;
 
-/// Wrap the data set's label type so that we can implement the `Categorical` trait for it.
 #[derive(Debug, Copy, Clone)]
-struct Iris(uci_iris::Iris);
+enum Iris {
+    None,
+    Setosa,
+    Versicolor,
+    Virginica,
+}
 
-/// The iris set is pretty restrictive in terms of access. We can only get a sample given its
-/// index. So we implement our Sample representation as a reference to the data set and an index.
-///
-/// Alternatively, we could have copied the data into our own structure.
+impl<'a> From<&'a f64> for Iris {
+    fn from(f: &'a f64) -> Iris {
+        Iris::from_usize(*f as usize)
+    }
+}
+
+impl Categorical for Iris {
+    fn as_usize(&self) -> usize {
+        match *self {
+            Iris::Setosa => 0,
+            Iris::Versicolor => 1,
+            Iris::Virginica => 2,
+            Iris::None => panic!("invalid Iris")
+        }
+    }
+
+    fn from_usize(id: usize) -> Self {
+        match id as u8 {
+            0 => Iris::Setosa,
+            1 => Iris::Versicolor,
+            2 => Iris::Virginica,
+            _ => Iris::None
+        }
+    }
+
+    fn n_categories(&self) -> Option<usize> {
+        Some(3)
+    }
+}
+
 struct Sample<'a> {
-    data_set: &'a uci_iris::Data,
-    index: usize,
+    x: &'a [f64],
+    y: Iris,
 }
 
 impl<'a> fmt::Debug for Sample<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.data_set.get_sample(self.index))
-    }
-}
-
-impl<'a> Sample<'a> {
-    /// Convenience method to access the sample's features
-    fn x(&self) -> &[f32] {
-        self.data_set.get_sample(self.index).0
-    }
-
-    /// Convenience method to access the sample's class label
-    fn y(&self) -> Iris {
-        Iris(self.data_set.get_sample(self.index).1)
+        write!(f, "{:?} : {:?}", self.x, self.y)
     }
 }
 
 impl<'a> SampleDescription for Sample<'a> {
     type ThetaSplit = usize;
     type ThetaLeaf = ClassCounts;
-    type Feature = f32;
+    type Feature = f64;
     type Prediction = ClassCounts;
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         // We use the data columns directly as features
-        self.x()[*theta]
+        self.x[*theta]
     }
 
     fn sample_predict(&self, c: &Self::ThetaLeaf) -> Self::Prediction {
@@ -79,10 +97,10 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
     fn train_leaf_predictor(&self) -> ClassCounts {
         // count the number of samples in each class. This is possible
         // because there exists an `impl iter::Sum for ClassCounts`.
-        self.iter().map(|sample| sample.y()).sum()
+        self.iter().map(|sample| sample.y).sum()
     }
 
-    fn partition_data(&mut self, split: &Split<usize, f32>) -> (&mut Self, &mut Self) {
+    fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
         // partition the data set over the split
         let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
         // return two disjoint subsets
@@ -92,19 +110,19 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
     fn split_criterion(&self) -> f64 {
         // This is a classification task, so we use the gini criterion.
         // In the future there will be a function provided by the library for this.
-        let counts: ClassCounts = self.iter().map(|sample| sample.y()).sum();
-        let p1 = counts.probability(Iris(uci_iris::Iris::Setosa));
-        let p2 = counts.probability(Iris(uci_iris::Iris::Versicolor));
-        let p3 = counts.probability(Iris(uci_iris::Iris::Virginica));
+        let counts: ClassCounts = self.iter().map(|sample| sample.y).sum();
+        let p1 = counts.probability(Iris::Setosa);
+        let p2 = counts.probability(Iris::Versicolor);
+        let p3 = counts.probability(Iris::Virginica);
         let gini = p1 * (1.0 - p1) + p2 * (1.0 - p2) + p3 * (1.0 - p3);
         gini
     }
 
-    fn feature_bounds(&self, theta: &usize) -> (f32, f32) {
+    fn feature_bounds(&self, theta: &usize) -> (f64, f64) {
         // find minimum and maximum of a feature
         self.iter()
             .map(|sample| sample.sample_as_split_feature(theta))
-            .fold((std::f32::INFINITY, std::f32::NEG_INFINITY),
+            .fold((std::f64::INFINITY, std::f64::NEG_INFINITY),
                   |(min, max), x| {
                       (if x < min {x} else {min},
                        if x > max {x} else {max})
@@ -112,71 +130,43 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
     }
 }
 
-/// Here we let the type system know that `Iris` is a categorical type.
-impl Categorical for Iris {
-    fn as_usize(&self) -> usize {
-        self.0 as usize
-    }
-
-    fn from_usize(id: usize) -> Self {
-        match id {
-            0 => Iris(uci_iris::Iris::Setosa),
-            1 => Iris(uci_iris::Iris::Versicolor),
-            2 => Iris(uci_iris::Iris::Virginica),
-            _ => panic!("Invalid class")
-        }
-    }
-
-    fn n_categories(&self) -> Option<usize> {
-        Some(3)
-    }
-}
-
 
 fn main() {
-    // load data set
-    let loader = uci_iris::DataSet::new().create().unwrap();
-    let data = loader.load_data().unwrap();
+    let task = OpenML::new().task(59).unwrap();
 
-    // convert data set for use with forester
-    let mut training = Vec::new();
-    let mut testing = Vec::new();
-    for i in 0..data.n_samples() {
-        let sample = Sample {
-            data_set: &data,
-            index: i,
-        };
+    println!("Task: {}", task.name());
 
-        // randomly assign samples to training and testing set
-        if thread_rng().gen_range(0, 2) == 0 {
-            testing.push(sample);
-        } else {
-            training.push(sample);
-        }
-    }
+    let measure = task.perform(|x_train, y_train, x_test| {
 
-    println!("Fitting...");
-    let forest = DeterministicForestBuilder::new(
-        100,
-        DeterministicTreeBuilder::new(
-            10,
-            None,
-            BestRandomSplit::new(4)
-        )
-    ).fit(&mut training as &mut [_]);
+        let mut train: Vec<_> = (0..x_train.n_rows())
+            .map(|i| Sample {
+                x: x_train.row(i),
+                y: y_train.at(i, 0).into()
+            })
+            .collect();
 
-    let mut confusion = [[0; 3]; 3];
+        println!("Fitting...");
+        let forest = DeterministicForestBuilder::new(
+            100,
+            DeterministicTreeBuilder::new(
+                15,
+                None,
+                BestRandomSplit::new(4)
+            )
+        ).fit(&mut train as &mut [_]);
 
-    println!("Predicting...");
-    for sample in &testing {
-        let probs = forest.predict(sample);
-        let pred: Iris = probs.most_frequent();
-
-        confusion[sample.y().as_usize()][pred.as_usize()] += 1;
-    }
-
-    println!("Confusion matrix:");
-    println!("{:>20} : {:>2} {:>2} {:>2}", format!("{:?}", Iris::from_usize(0)), confusion[0][0], confusion[0][1], confusion[0][2]);
-    println!("{:>20} : {:>2} {:>2} {:>2}", format!("{:?}", Iris::from_usize(1)), confusion[1][0], confusion[1][1], confusion[1][2]);
-    println!("{:>20} : {:>2} {:>2} {:>2}", format!("{:?}", Iris::from_usize(2)), confusion[2][0], confusion[2][1], confusion[2][2]);
+        println!("Predicting...");
+        (0..x_test.n_rows())
+            .map(|i| {
+                let sample = Sample {
+                    x: x_test.row(i),
+                    y: Iris::None
+                };
+                let prediction: Iris = forest.predict(&sample).most_frequent();
+                prediction.as_usize() as f64
+            })
+            .collect()
+    });
+    println!("{:#?}", measure);
+    println!("{:#?}", measure.result());
 }
