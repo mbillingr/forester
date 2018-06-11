@@ -52,6 +52,10 @@ name = "extra_trees_classifier"
 path = "examples/extra_trees_classifier.rs"
 
 [[example]]
+name = "fashion-mnist"
+path = "examples/fashion-mnist.rs"
+
+[[example]]
 name = "iris"
 path = "examples/iris.rs"
 

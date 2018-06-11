@@ -35,3 +35,18 @@ pub trait CatCount<C>
     /// Return the most frequent category.
     fn most_frequent(&self) -> C;
 }
+
+
+impl Categorical for u8 {
+    fn as_usize(&self) -> usize {
+        *self as usize
+    }
+
+    fn from_usize(id: usize) -> Self {
+        id as u8
+    }
+
+    fn n_categories(&self) -> Option<usize> {
+        None
+    }
+}
