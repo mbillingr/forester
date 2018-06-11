@@ -67,3 +67,7 @@ path = "examples/rotational_classifier.rs"
 [[example]]
 name = "profile1"
 path = "examples/profile1.rs"
+
+[[example]]
+name = "profile2"
+path = "examples/profile2.rs"
