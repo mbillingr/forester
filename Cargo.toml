@@ -19,7 +19,7 @@ profiling = ["cpuprofiler"]
 
 [dependencies]
 cpuprofiler = { version = "0.0.3", optional = true }  # this is a dev-dependency, but those can't be optional
-num-traits = "0.1"
+num-traits = "0.2"
 rand = "0.4"
 
 [dev-dependencies]
@@ -28,6 +28,8 @@ gnuplot = "0.0.24"
 image = "0.18"
 ndarray = "0.11"
 openml = { path = "../openml-rust" }
+serde = "1.0"
+serde_derive = "1.0"
 
 
 [[bench]]

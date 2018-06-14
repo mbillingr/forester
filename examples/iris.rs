@@ -1,11 +1,15 @@
 extern crate forester;
+extern crate num_traits;
 extern crate openml;
 extern crate rand;
+#[macro_use]
+extern crate serde_derive;
 
 mod common;
 
 use std::fmt;
 
+use num_traits::ToPrimitive;
 use rand::{thread_rng, Rng};
 
 use forester::array_ops::Partition;
@@ -19,11 +23,17 @@ use openml::OpenML;
 
 use common::rgb_classes::ClassCounts;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Deserialize)]
 enum Iris {
     None,
+
+    #[serde(rename = "Iris-setosa")]
     Setosa,
+
+    #[serde(rename = "Iris-versicolor")]
     Versicolor,
+
+    #[serde(rename = "Iris-virginica")]
     Virginica,
 }
 
@@ -57,18 +67,28 @@ impl Categorical for Iris {
     }
 }
 
-struct Sample<'a> {
-    x: &'a [f64],
+impl ToPrimitive for Iris {
+    fn to_i64(&self) -> Option<i64> {
+        Some(self.as_usize() as i64)
+    }
+
+    fn to_u64(&self) -> Option<u64> {
+        Some(self.as_usize() as u64)
+    }
+}
+
+struct Sample {
+    x: [f64; 4],
     y: Iris,
 }
 
-impl<'a> fmt::Debug for Sample<'a> {
+impl fmt::Debug for Sample {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?} : {:?}", self.x, self.y)
     }
 }
 
-impl<'a> SampleDescription for Sample<'a> {
+impl SampleDescription for Sample {
     type ThetaSplit = usize;
     type ThetaLeaf = ClassCounts;
     type Feature = f64;
@@ -84,7 +104,7 @@ impl<'a> SampleDescription for Sample<'a> {
     }
 }
 
-impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
+impl TrainingData<Sample> for [Sample] {
     fn n_samples(&self) -> usize {
         self.len()
     }
@@ -136,14 +156,9 @@ fn main() {
 
     println!("Task: {}", task.name());
 
-    let measure = task.perform(|x_train, y_train, x_test| {
+    let measure = task.run_static(|train, test| {
 
-        let mut train: Vec<_> = (0..x_train.n_rows())
-            .map(|i| Sample {
-                x: x_train.row(i),
-                y: y_train.at(i, 0).into()
-            })
-            .collect();
+        let mut train: Vec<_> = train.map(|(&x, &y)| Sample {x, y}).collect();
 
         println!("Fitting...");
         let forest = DeterministicForestBuilder::new(
@@ -156,16 +171,16 @@ fn main() {
         ).fit(&mut train as &mut [_]);
 
         println!("Predicting...");
-        (0..x_test.n_rows())
-            .map(|i| {
-                let sample = Sample {
-                    x: x_test.row(i),
-                    y: Iris::None
-                };
-                let prediction: Iris = forest.predict(&sample).most_frequent();
-                prediction.as_usize() as f64
-            })
-            .collect()
+        let result: Vec<_> = test.map(|&x| {
+            let sample = Sample {
+                x,
+                y: Iris::None
+            };
+            let prediction: Iris = forest.predict(&sample).most_frequent();
+            prediction
+        }).collect();
+
+        Box::new(result.into_iter())
     });
     println!("{:#?}", measure);
     println!("{:#?}", measure.result());

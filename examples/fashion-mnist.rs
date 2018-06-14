@@ -100,14 +100,9 @@ fn main() {
 
     println!("Task: {}", task.name());
 
-    let measure = task.perform(|x_train, y_train, x_test| {
+    let measure = task.run(|train, test| {
 
-        let mut train: Vec<_> = (0..x_train.n_rows())
-            .map(|i| Sample {
-                x: x_train.row(i),
-                y: *y_train.at(i, 0) as u8,
-            })
-            .collect();
+        let mut train: Vec<_> = train.map(|(x, &y)| Sample {x, y}).collect();
 
         println!("Fitting...");
         let forest = DeterministicForestBuilder::new(
@@ -120,16 +115,18 @@ fn main() {
         ).fit(&mut train as &mut [_]);
 
         println!("Predicting...");
-        (0..x_test.n_rows())
-            .map(|i| {
+        let result: Vec<_> = test
+            .map(|x| {
                 let sample = Sample {
-                    x: x_test.row(i),
+                    x,
                     y: 99
                 };
                 let prediction: u8 = forest.predict(&sample).most_frequent();
-                prediction.as_usize() as f64
+                prediction
             })
-            .collect()
+            .collect();
+
+        Box::new(result.into_iter())
     });
     println!("{:#?}", measure);
     println!("{:#?}", measure.result());
