@@ -11,6 +11,7 @@ use std::fmt;
 
 use num_traits::ToPrimitive;
 use rand::{thread_rng, Rng};
+use openml::MeasureAccumulator;
 
 use forester::array_ops::Partition;
 use forester::data::{SampleDescription, TrainingData};
@@ -19,11 +20,9 @@ use forester::dtree::DeterministicTreeBuilder;
 use forester::split::{BestRandomSplit, Split};
 use forester::categorical::{Categorical, CatCount};
 
-use openml::OpenML;
-
 use common::rgb_classes::ClassCounts;
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Eq, PartialEq)]
 enum Iris {
     None,
 
@@ -152,11 +151,11 @@ impl TrainingData<Sample> for [Sample] {
 
 
 fn main() {
-    let task = OpenML::new().task(59).unwrap();
+    let task = openml::SupervisedClassification::from_openml(59).unwrap();
 
     println!("Task: {}", task.name());
 
-    let measure = task.run_static(|train, test| {
+    let acc: openml::PredictiveAccuracy<_> = task.run_static(|train, test| {
 
         let mut train: Vec<_> = train.map(|(&x, &y)| Sample {x, y}).collect();
 
@@ -182,6 +181,6 @@ fn main() {
 
         Box::new(result.into_iter())
     });
-    println!("{:#?}", measure);
-    println!("{:#?}", measure.result());
+    println!("{:#?}", acc);
+    println!("{:#?}", acc.result());
 }

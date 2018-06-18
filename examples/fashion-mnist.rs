@@ -1,44 +1,49 @@
 extern crate forester;
 extern crate openml;
 extern crate rand;
+#[macro_use]
+extern crate serde_derive;
 
 mod common;
 
-use std::fmt;
-
 use rand::{thread_rng, Rng};
+use openml::MeasureAccumulator;
 
 use forester::array_ops::Partition;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
 use forester::split::{BestRandomSplit, Split};
-use forester::categorical::{Categorical, CatCount};
-
-use openml::OpenML;
+use forester::categorical::CatCount;
 
 use common::dig_classes::ClassCounts;
 
+#[derive(Deserialize)]
+struct Features(Vec<u8>);
+
 struct Sample<'a> {
-    x: &'a [f64],
+    x: &'a Features,
     y: u8,
 }
 
-impl<'a> fmt::Debug for Sample<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?} : {:?}", self.x, self.y)
+impl<'a> From<(&'a Features, &'a u8)> for Sample<'a> {
+    fn from(src: (&'a Features, &'a u8)) -> Self {
+        Sample {
+            x: src.0,
+            y: *src.1,
+        }
     }
 }
 
 impl<'a> SampleDescription for Sample<'a> {
     type ThetaSplit = usize;
     type ThetaLeaf = ClassCounts;
-    type Feature = f64;
+    type Feature = u8;
     type Prediction = ClassCounts;
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         // We use the data columns directly as features
-        self.x[*theta]
+        self.x.0[*theta]
     }
 
     fn sample_predict(&self, c: &Self::ThetaLeaf) -> Self::Prediction {
@@ -62,7 +67,7 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         self.iter().map(|sample| sample.y).sum()
     }
 
-    fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
+    fn partition_data(&mut self, split: &Split<usize, u8>) -> (&mut Self, &mut Self) {
         // partition the data set over the split
         let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
         // return two disjoint subsets
@@ -82,11 +87,11 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         gini
     }
 
-    fn feature_bounds(&self, theta: &usize) -> (f64, f64) {
+    fn feature_bounds(&self, theta: &usize) -> (u8, u8) {
         // find minimum and maximum of a feature
         self.iter()
             .map(|sample| sample.sample_as_split_feature(theta))
-            .fold((std::f64::INFINITY, std::f64::NEG_INFINITY),
+            .fold((255, 0),
                   |(min, max), x| {
                       (if x < min {x} else {min},
                        if x > max {x} else {max})
@@ -96,13 +101,13 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
 
 
 fn main() {
-    let task = OpenML::new().task(146825).unwrap();
+    let task = openml::SupervisedClassification::from_openml(146825).unwrap();
 
     println!("Task: {}", task.name());
 
-    let measure = task.run(|train, test| {
+    let acc: openml::PredictiveAccuracy<_> = task.run_static(|train, test| {
 
-        let mut train: Vec<_> = train.map(|(x, &y)| Sample {x, y}).collect();
+        let mut train: Vec<_> = train.map(Sample::from).collect();
 
         println!("Fitting...");
         let forest = DeterministicForestBuilder::new(
@@ -128,6 +133,6 @@ fn main() {
 
         Box::new(result.into_iter())
     });
-    println!("{:#?}", measure);
-    println!("{:#?}", measure.result());
+    println!("{:#?}", acc);
+    println!("{:#?}", acc.result());
 }
