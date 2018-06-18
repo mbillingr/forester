@@ -6,7 +6,7 @@ use forester::categorical::{Categorical, CatCount};
 use forester::iter_mean::IterMean;
 
 /// Three classes, labelled `Red`, `Green`, `Blue`.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Deserialize)]
 pub struct Digit(pub u8);
 
 impl Categorical for Digit {

@@ -1,21 +1,22 @@
 extern crate forester;
 extern crate openml;
 extern crate rand;
+#[macro_use]
+extern crate serde_derive;
 
 mod common;
 
 use std::fmt;
 
 use rand::{thread_rng, Rng};
+use openml::MeasureAccumulator;
 
 use forester::array_ops::Partition;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
 use forester::split::{BestRandomSplit, Split};
-use forester::categorical::{Categorical, CatCount};
-
-use openml::{OpenML, Array, ArrayCastInto, ArrayCastFrom};
+use forester::categorical::CatCount;
 
 use common::dig_classes::{Digit, ClassCounts};
 
@@ -27,6 +28,15 @@ struct Sample<'a> {
 impl<'a> fmt::Debug for Sample<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?} : {:?}", self.x, self.y)
+    }
+}
+
+impl<'a> From<(&'a [u8], &'a Digit)> for Sample<'a> {
+    fn from(src: (&'a [u8], &'a Digit)) -> Self {
+        Sample {
+            x: src.0,
+            y: *src.1,
+        }
     }
 }
 
@@ -85,16 +95,16 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         gini
     }
 
-    fn feature_bounds(&self, theta: &usize) -> (u8, u8) {
+    fn feature_bounds(&self, _theta: &usize) -> (u8, u8) {
         // find minimum and maximum of a feature
-        self.iter()
+        /*self.iter()
             .map(|sample| sample.sample_as_split_feature(theta))
             .fold((255, 0),
                   |(min, max), x| {
                       (if x < min {x} else {min},
                        if x > max {x} else {max})
-                  })
-        //(0, 255)
+                  })*/
+        (0, 255)
     }
 }
 
@@ -102,22 +112,14 @@ pub fn main() {
     #[cfg(feature = "cpuprofiler")] {
         extern crate cpuprofiler;
 
-        let task = OpenML::new().task(146825).unwrap();
+        let task = openml::SupervisedClassification::from_openml(146825).unwrap();
         println!("Task: {}", task.name());
 
         cpuprofiler::PROFILER.lock().unwrap().start("task.profile").unwrap();
 
-        let measure = task.perform(|x_train, y_train, x_test| {
+        let acc: openml::PredictiveAccuracy<_> = task.run(|train, test| {
 
-            let x_train: Array<u8> = x_train.cast_into().unwrap();
-            let x_test: Array<u8> = x_test.cast_into().unwrap();
-
-            let mut train: Vec<_> = (0..x_train.n_rows())
-                .map(|i| Sample {
-                    x: x_train.row(i),
-                    y: Digit(*y_train.at(i, 0) as u8)
-                })
-                .collect();
+            let mut train: Vec<_> = train.map(Sample::from).collect();
 
             println!("Fitting...");
             let forest = DeterministicForestBuilder::new(
@@ -130,23 +132,24 @@ pub fn main() {
             ).fit(&mut train as &mut [_]);
 
             println!("Predicting...");
-            (0..x_test.n_rows())
-                .map(|i| {
+            let result: Vec<_> = test
+                .map(|x| {
                     let sample = Sample {
-                        x: x_test.row(i),
+                        x,
                         y: Digit(99)
                     };
-                    let prediction = forest.predict(&sample);
-                    let prediction: Digit = prediction.most_frequent();
-                    prediction.as_usize() as f64
+                    let prediction: Digit = forest.predict(&sample).most_frequent();
+                    prediction
                 })
-                .collect()
+                .collect();
+
+            Box::new(result.into_iter())
         });
 
         cpuprofiler::PROFILER.lock().unwrap().stop().unwrap();
 
-        println!("{:#?}", measure);
-        println!("{:#?}", measure.result());
+        println!("{:#?}", acc);
+        println!("{:#?}", acc.result());
 
         println!("Profiling done. Convert the profile with something like");
         println!("  > pprof --callgrind target/release/examples/profile2 task.profile > task.prof");
