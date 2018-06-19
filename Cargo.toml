@@ -46,6 +46,10 @@ harness = false
 
 
 [[example]]
+name = "cleveland"
+path = "examples/cleveland.rs"
+
+[[example]]
 name = "extra_trees_regressor"
 path = "examples/extra_trees_regressor.rs"
 
