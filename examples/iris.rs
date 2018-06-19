@@ -76,26 +76,40 @@ impl ToPrimitive for Iris {
     }
 }
 
-struct Sample {
-    x: [f64; 4],
+#[derive(Debug, Clone, Deserialize)]
+struct IrisData {
+    sepallength: f32,
+    sepalwidth: f32,
+    petallength: f32,
+    petalwidth: f32,
+}
+
+struct Sample<'a> {
+    x: &'a IrisData,
     y: Iris,
 }
 
-impl fmt::Debug for Sample {
+impl<'a> fmt::Debug for Sample<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?} : {:?}", self.x, self.y)
     }
 }
 
-impl SampleDescription for Sample {
+impl<'a> SampleDescription for Sample<'a> {
     type ThetaSplit = usize;
     type ThetaLeaf = ClassCounts;
-    type Feature = f64;
+    type Feature = f32;
     type Prediction = ClassCounts;
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         // We use the data columns directly as features
-        self.x[*theta]
+        match *theta {
+            0 => self.x.sepallength,
+            1 => self.x.sepalwidth,
+            2 => self.x.petallength,
+            3 => self.x.petalwidth,
+            _ => panic!("Invalid feature")
+        }
     }
 
     fn sample_predict(&self, c: &Self::ThetaLeaf) -> Self::Prediction {
@@ -103,7 +117,7 @@ impl SampleDescription for Sample {
     }
 }
 
-impl TrainingData<Sample> for [Sample] {
+impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
     fn n_samples(&self) -> usize {
         self.len()
     }
@@ -119,7 +133,7 @@ impl TrainingData<Sample> for [Sample] {
         self.iter().map(|sample| sample.y).sum()
     }
 
-    fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
+    fn partition_data(&mut self, split: &Split<usize, f32>) -> (&mut Self, &mut Self) {
         // partition the data set over the split
         let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
         // return two disjoint subsets
@@ -137,11 +151,11 @@ impl TrainingData<Sample> for [Sample] {
         gini
     }
 
-    fn feature_bounds(&self, theta: &usize) -> (f64, f64) {
+    fn feature_bounds(&self, theta: &usize) -> (f32, f32) {
         // find minimum and maximum of a feature
         self.iter()
             .map(|sample| sample.sample_as_split_feature(theta))
-            .fold((std::f64::INFINITY, std::f64::NEG_INFINITY),
+            .fold((std::f32::INFINITY, std::f32::NEG_INFINITY),
                   |(min, max), x| {
                       (if x < min {x} else {min},
                        if x > max {x} else {max})
@@ -157,7 +171,7 @@ fn main() {
 
     let acc: openml::PredictiveAccuracy<_> = task.run_static(|train, test| {
 
-        let mut train: Vec<_> = train.map(|(&x, &y)| Sample {x, y}).collect();
+        let mut train: Vec<_> = train.map(|(x, &y)| Sample {x, y}).collect();
 
         println!("Fitting...");
         let forest = DeterministicForestBuilder::new(
@@ -170,7 +184,7 @@ fn main() {
         ).fit(&mut train as &mut [_]);
 
         println!("Predicting...");
-        let result: Vec<_> = test.map(|&x| {
+        let result: Vec<_> = test.map(|x| {
             let sample = Sample {
                 x,
                 y: Iris::None
