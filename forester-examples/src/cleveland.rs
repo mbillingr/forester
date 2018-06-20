@@ -3,8 +3,6 @@ extern crate forester;
 extern crate num_traits;
 extern crate openml;
 extern crate rand;
-#[macro_use]
-extern crate serde_derive;
 
 use std::f32;
 use std::fmt;
