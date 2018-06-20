@@ -1,24 +1,18 @@
+extern crate examples_common;
 extern crate forester;
 extern crate openml;
 extern crate rand;
-#[macro_use]
-extern crate serde_derive;
-
-mod common;
 
 use std::fmt;
 
 use rand::{thread_rng, Rng};
-use openml::MeasureAccumulator;
 
 use forester::array_ops::Partition;
 use forester::data::{SampleDescription, TrainingData};
-use forester::dforest::DeterministicForestBuilder;
-use forester::dtree::DeterministicTreeBuilder;
-use forester::split::{BestRandomSplit, Split};
+use forester::split::Split;
 use forester::categorical::CatCount;
 
-use common::dig_classes::{Digit, ClassCounts};
+use examples_common::dig_classes::{Digit, ClassCounts};
 
 struct Sample<'a> {
     x: &'a [u8],
@@ -111,6 +105,11 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
 pub fn main() {
     #[cfg(feature = "cpuprofiler")] {
         extern crate cpuprofiler;
+
+        use openml::MeasureAccumulator;
+        use forester::dforest::DeterministicForestBuilder;
+        use forester::dtree::DeterministicTreeBuilder;
+        use forester::split::BestRandomSplit;
 
         let task = openml::SupervisedClassification::from_openml(146825).unwrap();
         println!("Task: {}", task.name());

@@ -1,10 +1,9 @@
+extern crate examples_common;
 extern crate forester;
 extern crate openml;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
-
-mod common;
 
 use rand::{thread_rng, Rng};
 use openml::MeasureAccumulator;
@@ -16,7 +15,7 @@ use forester::dtree::DeterministicTreeBuilder;
 use forester::split::{BestRandomSplit, Split};
 use forester::categorical::CatCount;
 
-use common::dig_classes::ClassCounts;
+use examples_common::dig_classes::ClassCounts;
 
 #[derive(Deserialize)]
 struct Features(Vec<u8>);

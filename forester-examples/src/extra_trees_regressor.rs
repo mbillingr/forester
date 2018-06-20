@@ -1,8 +1,7 @@
+extern crate examples_common;
 extern crate forester;
 extern crate gnuplot;
 extern crate rand;
-
-mod common;
 
 use std::f64::consts::PI;
 
@@ -13,7 +12,7 @@ use rand::{thread_rng, Rng};
 use forester::api::extra_trees_regressor::{ExtraTreesRegressor, Sample};
 use forester::vec2d::Vec2D;
 
-use common::numeric::{linspace, randspace};
+use examples_common::numeric::{linspace, randspace};
 
 /// function used to generate training data
 fn func(x: &f64) -> f64 {

@@ -1,11 +1,10 @@
+extern crate examples_common;
 extern crate forester;
 extern crate num_traits;
 extern crate openml;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
-
-mod common;
 
 use std::fmt;
 
@@ -20,7 +19,7 @@ use forester::dtree::DeterministicTreeBuilder;
 use forester::split::{BestRandomSplit, Split};
 use forester::categorical::{Categorical, CatCount};
 
-use common::rgb_classes::ClassCounts;
+use examples_common::rgb_classes::ClassCounts;
 
 #[derive(Debug, Copy, Clone, Deserialize, Eq, PartialEq)]
 enum Iris {

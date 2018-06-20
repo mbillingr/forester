@@ -1,11 +1,10 @@
+extern crate examples_common;
 extern crate forester;
 extern crate num_traits;
 extern crate openml;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
-
-mod common;
 
 use std::f32;
 use std::fmt;
