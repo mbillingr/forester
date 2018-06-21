@@ -50,3 +50,12 @@ impl Categorical for u8 {
         None
     }
 }
+
+
+#[test]
+fn cat_u8() {
+    let x = u8::from_usize(42);
+    assert_eq!(x, 42u8);
+    assert_eq!(x.as_usize(), 42usize);
+    assert_eq!(x.n_categories(), None);
+}
