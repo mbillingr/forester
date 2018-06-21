@@ -35,7 +35,7 @@ impl<Sample: SampleDescription> fmt::Debug for DeterministicTree<Sample>
           Sample::Feature: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Tree: ")?;
+        write!(f, "Tree:")?;
         let mut prefix = vec![];
         self.recursive_fmt(0, &mut prefix, false, f)
     }
@@ -61,7 +61,7 @@ impl<Sample: SampleDescription> DeterministicTree<Sample>
 
         match *node {
             Node::Invalid => write!(f, " *** Invalid ***")?,
-            Node::Leaf(ref l) => write!(f, "{:?}", l)?,
+            Node::Leaf(ref l) => write!(f, " {:?}", l)?,
             Node::Split{ref theta, ref threshold, left, right} => {
                 write!(f, "({:?}) <= {:?}", theta, threshold)?;
                 if let Some(&" +--") = prefix.last() {
@@ -230,5 +230,20 @@ mod tests {
             assert_eq!(tree.predict(sample), sample.y);
         }
 
+    }
+
+    #[test]
+    fn fmt() {
+        let tree: DeterministicTree<Sample<_, _>> = DeterministicTree {
+            nodes: vec![
+                Node::Split { theta: 1, threshold: 2.3, left: 1, right: 2},
+                Node::Leaf(4.5),
+                Node::Invalid,
+            ]
+        };
+
+        let formatted = format!("{:?}", tree);
+
+        assert_eq!(formatted, "Tree:\n(1) <= 2.3\n +-- 4.5\n +-- *** Invalid ***");
     }
 }
