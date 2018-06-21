@@ -84,6 +84,7 @@ impl<Sample: SampleDescription> DeterministicTree<Sample>
 impl<Sample> DeterministicTree<Sample>
     where Sample: SampleDescription
 {
+    #[cfg(test)]
     pub(crate) fn new_with_nodes(nodes: Vec<Node<Sample>>) -> Self {
         DeterministicTree {
             nodes
