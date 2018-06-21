@@ -36,6 +36,10 @@ name = "fashion-mnist"
 path = "src/fashion-mnist.rs"
 
 [[example]]
+name = "fashion-mnist-superpixel"
+path = "src/fashion-mnist-superpixel.rs"
+
+[[example]]
 name = "iris"
 path = "src/iris.rs"
 
