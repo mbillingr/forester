@@ -94,7 +94,22 @@ fn main() {
 
     println!("Task: {}", task.name());
 
-    let acc: openml::RootMeanSquaredError<_> = task.run(|train, test| {
+    // Fit a naive model as baseline: simply use the mean of the training data to predict the output
+    let rmse0: openml::RootMeanSquaredError<_> = task.run(|train, _test| {
+        let y_mean = train
+            .map(|(_, y): (&[Option<f32>], &f32)| y)
+            .fold((0, 0.0), |(mut n, mut mean), y| {
+                n += 1usize;
+                mean += (y - mean) / n as f32;
+                (n, mean)
+            })
+            .1;
+
+        Box::new(std::iter::repeat(y_mean))
+    });
+
+    // Now fit a random forest model
+    let rmse: openml::RootMeanSquaredError<_> = task.run(|train, test| {
 
         let mut train: Vec<_> = train.map(|(x, &y)| Sample {x, y}).collect();
 
@@ -119,6 +134,11 @@ fn main() {
 
         Box::new(result.into_iter())
     });
-    println!("{:#?}", acc);
-    println!("{:#?}", acc.result());
+
+    // compare the prediction performance of both models
+    println!("\nNaive Model:");
+    println!("RMSE: {:#?}", rmse0.result());
+
+    println!("\nForest Regressor:");
+    println!("RMSE: {:#?}", rmse.result());
 }
