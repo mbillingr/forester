@@ -90,6 +90,7 @@ pub mod extra_trees_regressor {
         n_estimators: usize,
         n_splits: usize,
         min_samples_split: usize,
+        max_depth: Option<usize>,
     }
 
     impl ExtraTreesRegressor {
@@ -112,6 +113,11 @@ pub mod extra_trees_regressor {
             self
         }
 
+        pub fn max_depth(mut self, d: usize) -> Self {
+            self.max_depth = Some(d);
+            self
+        }
+
         pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<f64>) -> DeterministicForest<Sample<'b, T, f64>>
             where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
         {
@@ -124,6 +130,7 @@ pub mod extra_trees_regressor {
                 self.n_estimators,
                 DeterministicTreeBuilder::new(
                     self.min_samples_split,
+                    self.max_depth,
                     BestRandomSplit::new(self.n_splits)
                 )
             ).fit(&mut data[..])
@@ -136,6 +143,7 @@ pub mod extra_trees_regressor {
                 n_estimators: 10,
                 n_splits: 1,
                 min_samples_split: 2,
+                max_depth: None,
             }
         }
     }
@@ -154,12 +162,17 @@ pub mod extra_trees_classifier {
     use iter_mean::IterMean;
     use split::{BestRandomSplit, Split};
 
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct Classes(pub u8);
 
     impl Categorical for Classes {
         fn as_usize(&self) -> usize {
             self.0 as usize
+        }
+
+        fn from_usize(id: usize) -> Self {
+            assert!(id < 256);
+            Classes(id as u8)
         }
 
         fn n_categories(&self) -> Option<usize> {
@@ -211,6 +224,19 @@ pub mod extra_trees_classifier {
             } else {
                 0.0
             }
+        }
+
+        fn most_frequent(&self) -> Classes {
+            let mut n = 0;
+            let mut c = 0;
+            for i in 0..self.counts.len() {
+                // TODO: handle ties?
+                if self.counts[i] > n {
+                    n = self.counts[i];
+                    c = i;
+                }
+            }
+            Classes::from_usize(c)
         }
     }
 
@@ -312,6 +338,7 @@ pub mod extra_trees_classifier {
         n_estimators: usize,
         n_splits: usize,
         min_samples_split: usize,
+        max_depth: Option<usize>,
     }
 
     impl ExtraTreesClassifier {
@@ -334,6 +361,11 @@ pub mod extra_trees_classifier {
             self
         }
 
+        pub fn max_depth(mut self, d: usize) -> Self {
+            self.max_depth = Some(d);
+            self
+        }
+
         pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<u8>) -> DeterministicForest<Sample<'b, T, Classes>>
             where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
         {
@@ -346,6 +378,7 @@ pub mod extra_trees_classifier {
                 self.n_estimators,
                 DeterministicTreeBuilder::new(
                     self.min_samples_split,
+                    self.max_depth,
                     BestRandomSplit::new(self.n_splits)
                 )
             ).fit(&mut data[..])
@@ -358,6 +391,7 @@ pub mod extra_trees_classifier {
                 n_estimators: 10,
                 n_splits: 1,
                 min_samples_split: 2,
+                max_depth: None,
             }
         }
     }
@@ -379,6 +413,7 @@ mod tests {
             .n_estimators(2)
             .n_splits(1)
             .min_samples_split(2)
+            .max_depth(3)
             .fit(&x, &y);
 
         assert_eq!(model.predict(&Sample::new(&[-1000], ())), 5.0);
@@ -394,8 +429,10 @@ mod tests {
         use super::extra_trees_classifier::Classes;
         use super::extra_trees_classifier::ExtraTreesClassifier;
         use super::extra_trees_classifier::Sample;
-        use categorical::CatCount;
+        use categorical::{Categorical, CatCount};
         use vec2d::Vec2D;
+
+        assert_eq!(Classes(42).n_categories(), None);
 
         let x = Vec2D::from_slice(&[1, 2, 3, 7, 8, 9], 1);
         let y = vec![1, 1, 1, 2, 2, 2];
@@ -404,6 +441,7 @@ mod tests {
             .n_estimators(100)
             .n_splits(1)
             .min_samples_split(2)
+            .max_depth(5)
             .fit(&x, &y);
 
         assert_eq!(model.predict(&Sample::new(&[-1000], ())).probability(Classes(1)), 1.0);
@@ -413,5 +451,9 @@ mod tests {
         assert_eq!(p.probability(Classes(0)), 0.0);
         assert!(p.probability(Classes(1)) > 0.0);
         assert!(p.probability(Classes(2)) > 0.0);
+        assert_eq!(p.probability(Classes(3)), 0.0);
+
+        assert_eq!(model.predict(&Sample::new(&[2], ())).most_frequent(), Classes(1));
+        assert_eq!(model.predict(&Sample::new(&[8], ())).most_frequent(), Classes(2));
     }
 }

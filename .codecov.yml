@@ -3,4 +3,5 @@ codecov:
     - !appveyor                # ignore CI builds by AppVeyor
 
 ignore:
-  - "examples"
+  - "forester-examples-common"
+  - "forester-examples"

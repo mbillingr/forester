@@ -1,0 +1,53 @@
+[package]
+name = "forester-examples"
+version = "0.1.0"
+authors = ["Martin Billinger <flkazemakase@gmail.com>"]
+
+[features]
+profiling = ["cpuprofiler"]
+
+[dependencies]
+cpuprofiler = { version = "0.0.3", optional = true }
+examples-common = { path = "../forester-examples-common"  }
+forester = { path = "../forester-crate"  }
+gnuplot = "0.0.26"
+image = "0.19"
+num-traits = "0.2"
+openml = "0.1"
+rand = "0.5"
+serde = "1.0"
+serde_derive = "1.0"
+
+
+[[example]]
+name = "cleveland"
+path = "src/cleveland.rs"
+
+[[example]]
+name = "extra_trees_regressor"
+path = "src/extra_trees_regressor.rs"
+
+[[example]]
+name = "extra_trees_classifier"
+path = "src/extra_trees_classifier.rs"
+
+[[example]]
+name = "fashion-mnist"
+path = "src/fashion-mnist.rs"
+
+[[example]]
+name = "iris"
+path = "src/iris.rs"
+
+[[example]]
+name = "rotational_classifier"
+path = "src/rotational_classifier.rs"
+
+
+[[example]]
+name = "profile1"
+path = "src/profile1.rs"
+
+[[example]]
+name = "profile2"
+path = "src/profile2.rs"

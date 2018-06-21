@@ -59,6 +59,10 @@ impl SplitFinder for BestRandomSplit
 
             let (min, max) = data.feature_bounds(&theta);
 
+            if max <= min {
+                continue
+            }
+
             let threshold = rng.gen_range(min, max);
 
             let split = Split{theta, threshold};

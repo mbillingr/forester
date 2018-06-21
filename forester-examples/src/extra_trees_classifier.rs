@@ -1,22 +1,21 @@
+extern crate examples_common;
 extern crate forester;
 extern crate image;
 extern crate rand;
-
-mod common;
 
 use std::f64::consts::PI;
 use std::fs::File;
 
 use rand::{thread_rng, Rng};
 
+use forester::array_ops::Partition;
 use forester::categorical::CatCount;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
-use forester::split::{BestRandomSplit,Split};
-use forester::array_ops::Partition;
+use forester::split::{BestRandomSplit, Split};
 
-use common::rgb_classes::{ClassCounts, Classes};
+use examples_common::rgb_classes::{ClassCounts, Classes};
 
 struct Sample<Y> {
     x: [f64; 2],
@@ -24,13 +23,13 @@ struct Sample<Y> {
 }
 
 impl<Y> SampleDescription for Sample<Y> {
-    type ThetaSplit = (f64, f64);
+    type ThetaSplit = usize;
     type ThetaLeaf = ClassCounts;
     type Feature = f64;
     type Prediction = ClassCounts;
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
-        self.x[0] * theta.0 + self.x[1] * theta.1
+        self.x[*theta]
     }
 
     fn sample_predict(&self, w: &Self::ThetaLeaf) -> Self::Prediction {
@@ -43,22 +42,21 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
         self.len()
     }
 
-    fn gen_split_feature(&self) -> (f64, f64) {
-        let a: f64 = thread_rng().gen::<f64>() * PI;
-        (a.sin(), a.cos())
+    fn gen_split_feature(&self) -> usize {
+        thread_rng().gen_range(0, 2)
     }
 
     fn train_leaf_predictor(&self) -> ClassCounts {
-        self.iter().map(|sample| &sample.y).sum()
+        self.iter().map(|sample| sample.y).sum()
     }
 
-    fn partition_data(&mut self, split: &Split<(f64, f64), f64>) -> (&mut Self, &mut Self) {
+    fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
         let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
         self.split_at_mut(i)
     }
 
     fn split_criterion(&self) -> f64 {
-        let counts: ClassCounts = self.iter().map(|sample| &sample.y).sum();
+        let counts: ClassCounts = self.iter().map(|sample| sample.y).sum();
         let p_red = counts.probability(Classes::Red);
         let p_green = counts.probability(Classes::Green);
         let p_blue = counts.probability(Classes::Blue);
@@ -66,7 +64,7 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
         gini
     }
 
-    fn feature_bounds(&self, theta: &(f64, f64)) -> (f64, f64) {
+    fn feature_bounds(&self, theta: &usize) -> (f64, f64) {
         self.iter()
             .map(|sample| sample.sample_as_split_feature(theta))
             .fold((std::f64::INFINITY, std::f64::NEG_INFINITY),
@@ -118,10 +116,11 @@ fn main() {
     // configure and fit random forest
     println!("Fitting...");
     let forest = DeterministicForestBuilder::new(
-        100,
+        100,  // 100 trees
         DeterministicTreeBuilder::new(
-            2,
-            BestRandomSplit::new(100)
+            10,  // don't split less than 10 samples
+            None,
+            BestRandomSplit::new(1)
         )
     ).fit(&mut data as &mut [_]);
 
@@ -175,6 +174,6 @@ fn main() {
 
     // store result
     let z: Vec<u8> = z.into_iter().map(|i| (i * 255.0) as u8).collect();
-    let encoder = image::png::PNGEncoder::new(File::create("rotational_classifier.png").unwrap());
+    let encoder = image::png::PNGEncoder::new(File::create("extra_trees_classifier.png").unwrap());
     encoder.encode(&z, N_COLS, N_ROWS, image::ColorType::RGB(8)).unwrap();
 }
