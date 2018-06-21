@@ -162,7 +162,7 @@ pub mod extra_trees_classifier {
     use iter_mean::IterMean;
     use split::{BestRandomSplit, Split};
 
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct Classes(pub u8);
 
     impl Categorical for Classes {
@@ -413,6 +413,7 @@ mod tests {
             .n_estimators(2)
             .n_splits(1)
             .min_samples_split(2)
+            .max_depth(3)
             .fit(&x, &y);
 
         assert_eq!(model.predict(&Sample::new(&[-1000], ())), 5.0);
@@ -428,8 +429,10 @@ mod tests {
         use super::extra_trees_classifier::Classes;
         use super::extra_trees_classifier::ExtraTreesClassifier;
         use super::extra_trees_classifier::Sample;
-        use categorical::CatCount;
+        use categorical::{Categorical, CatCount};
         use vec2d::Vec2D;
+
+        assert_eq!(Classes(42).n_categories(), None);
 
         let x = Vec2D::from_slice(&[1, 2, 3, 7, 8, 9], 1);
         let y = vec![1, 1, 1, 2, 2, 2];
@@ -438,6 +441,7 @@ mod tests {
             .n_estimators(100)
             .n_splits(1)
             .min_samples_split(2)
+            .max_depth(5)
             .fit(&x, &y);
 
         assert_eq!(model.predict(&Sample::new(&[-1000], ())).probability(Classes(1)), 1.0);
@@ -447,5 +451,9 @@ mod tests {
         assert_eq!(p.probability(Classes(0)), 0.0);
         assert!(p.probability(Classes(1)) > 0.0);
         assert!(p.probability(Classes(2)) > 0.0);
+        assert_eq!(p.probability(Classes(3)), 0.0);
+
+        assert_eq!(model.predict(&Sample::new(&[2], ())).most_frequent(), Classes(1));
+        assert_eq!(model.predict(&Sample::new(&[8], ())).most_frequent(), Classes(2));
     }
 }
