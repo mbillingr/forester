@@ -22,7 +22,7 @@ impl<Sample: SampleDescription> fmt::Debug for DeterministicForest<Sample>
           Sample::Feature: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Forest: {:?}", self.estimators)
+        write!(f, "Forest: {:#?}", self.estimators)
     }
 }
 
@@ -75,5 +75,37 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
         DeterministicForest {
             estimators
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dtree::Node;
+    use testdata::Sample;
+
+    #[test]
+    fn fmt() {
+        let forest: DeterministicForest<Sample<_, _>> = DeterministicForest {
+            estimators: vec![
+                DeterministicTree::new_with_nodes(vec![
+                    Node::Split { theta: 1, threshold: 2.3, left: 1, right: 2 },
+                    Node::Leaf(4.5),
+                    Node::Invalid,
+                ]),
+                DeterministicTree::new_with_nodes(vec![
+                    Node::Split { theta: 1, threshold: 2.3, left: 1, right: 2 },
+                    Node::Leaf(4.5),
+                    Node::Invalid,
+                ])
+            ]
+        };
+
+        let formatted = format!("{:?}", forest);
+
+        let tree_expected = "    Tree:\n    (1) <= 2.3\n     +-- 4.5\n     +-- *** Invalid ***";
+
+        assert_eq!(formatted, format!("Forest: [\n{},\n{}\n]", tree_expected, tree_expected));
     }
 }

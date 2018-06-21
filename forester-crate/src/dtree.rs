@@ -84,6 +84,12 @@ impl<Sample: SampleDescription> DeterministicTree<Sample>
 impl<Sample> DeterministicTree<Sample>
     where Sample: SampleDescription
 {
+    pub(crate) fn new_with_nodes(nodes: Vec<Node<Sample>>) -> Self {
+        DeterministicTree {
+            nodes
+        }
+    }
+
     // Making the predict function generic allows the user to pass in any sample that's compatible
     // with the tree's sample type
     pub fn predict<TestingSample>(&self, sample: &TestingSample) -> TestingSample::Prediction
