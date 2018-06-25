@@ -13,10 +13,15 @@ This implementation of random forests is heavily inspired by (1). In
 particular, models for classification, regression, and density
 estimation will be provided in a unified framework based on traits.
 
-Conceptually, the implementation consists of two main parts:
+Conceptually, the crate provides two main parts:
 
-- Generic functions for working with trees and forests
-- Traits that allow these functions to understand arbitrary user data
+1. A generic framework consisting of
+  - Functionality for fitting and predicting trees and forests
+  - Traits that allow these functions to understand arbitrary user data
+2. Common building blocks for plugging into the framework
+  - Split/Performance criteria (RMSE, GINI, ...)
+  - Split Finding strategies (best random, CART, ...)
+  - Ensemble combiners (aggregating, boosting - to be done)
 
 ## Usage
 
