@@ -16,12 +16,12 @@ estimation will be provided in a unified framework based on traits.
 Conceptually, the crate provides two main parts:
 
 1. A generic framework consisting of
-  - Functionality for fitting and predicting trees and forests
-  - Traits that allow these functions to understand arbitrary user data
+    - Functionality for fitting and predicting trees and forests
+    - Traits that allow these functions to understand arbitrary user data
 2. Common building blocks for plugging into the framework
-  - Split/Performance criteria (RMSE, GINI, ...)
-  - Split Finding strategies (best random, CART, ...)
-  - Ensemble combiners (aggregating, boosting - to be done)
+    - Split/Performance criteria (RMSE, GINI, ...)
+    - Split Finding strategies (best random, CART, ...)
+    - Ensemble combiners (aggregating, boosting - to be done)
 
 ## Usage
 
