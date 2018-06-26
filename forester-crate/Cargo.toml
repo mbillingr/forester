@@ -9,6 +9,7 @@ documentation = "https://docs.rs/forester/"
 description = """
 A crate for implementing various flavors of random forests and decision trees.
 """
+readme = "README.md"
 categories = ["science"]
 keywords = ["machine-learning", "random forest", "decision tree", "ensemble", "tree"]
 #maintenance = { status = "experimental" }
