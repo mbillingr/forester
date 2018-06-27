@@ -3,10 +3,8 @@ use num_traits::Bounded;
 use rand::distributions::range::SampleRange;
 use rand::{thread_rng, Rng};
 
-use array_ops::Partition;
 use data::{SampleDescription, TrainingData};
 use iter_mean::IterMean;
-use split::Split;
 
 #[derive(Debug, Clone)]
 pub struct Sample<'a, X: 'a, Y> {
@@ -53,12 +51,6 @@ impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
 
     fn train_leaf_predictor(&self) -> f64 {
         f64::mean(self.iter().map(|sample| &sample.y))
-    }
-
-    /// Partition data set in-place according to a split
-    fn partition_data(&mut self, split: &Split<usize, X>) -> (&mut Self, &mut Self) {
-        let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-        self.split_at_mut(i)
     }
 
     fn split_criterion(&self) -> f64 {

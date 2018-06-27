@@ -65,7 +65,8 @@ impl<SF, Sample> DeterministicForestBuilder<SF, Sample>
     }
 
     pub fn fit<Training>(&self, data: &mut Training) -> DeterministicForest<Sample>
-        where Training: ?Sized + TrainingData<Sample>
+        where Training: ?Sized + TrainingData<Sample>,
+              [Sample]: TrainingData<Sample>
     {
         let mut estimators = Vec::with_capacity(self.n_estimators);
         for _ in 0..self.n_estimators {

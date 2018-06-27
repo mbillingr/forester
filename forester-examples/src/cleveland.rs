@@ -10,13 +10,13 @@ use std::fmt;
 use rand::{thread_rng, Rng};
 use openml::MeasureAccumulator;
 
-use forester::array_ops::Partition;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
 use forester::iter_mean::IterMean;
-use forester::split::{BestRandomSplit, Split};
+use forester::split::BestRandomSplit;
 
+#[derive(Clone)]
 struct Sample<'a> {
     x: &'a [Option<f32>],
     y: f32,
@@ -60,13 +60,6 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
     fn train_leaf_predictor(&self) -> f32 {
         // leaf prediction is the mean of all training samples that fall into the leaf
         f32::mean(self.iter().map(|sample| &sample.y))
-    }
-
-    fn partition_data(&mut self, split: &Split<usize, f32>) -> (&mut Self, &mut Self) {
-        // partition the data set over the split
-        let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-        // return two disjoint subsets
-        self.split_at_mut(i)
     }
 
     fn split_criterion(&self) -> f64 {
@@ -118,7 +111,6 @@ fn main() {
             1000,
             DeterministicTreeBuilder::new(
                 30,
-                None,
                 BestRandomSplit::new(3)
             )
         ).fit(&mut train as &mut [_]);

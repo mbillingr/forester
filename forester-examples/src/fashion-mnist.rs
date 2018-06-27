@@ -8,11 +8,10 @@ extern crate serde_derive;
 use rand::{thread_rng, Rng};
 use openml::MeasureAccumulator;
 
-use forester::array_ops::Partition;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
-use forester::split::{BestRandomSplit, Split};
+use forester::split::BestRandomSplit;
 use forester::categorical::CatCount;
 
 use examples_common::dig_classes::ClassCounts;
@@ -20,6 +19,7 @@ use examples_common::dig_classes::ClassCounts;
 #[derive(Deserialize)]
 struct Features(Vec<u8>);
 
+#[derive(Clone)]
 struct Sample<'a> {
     x: &'a Features,
     y: u8,
@@ -66,13 +66,6 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         self.iter().map(|sample| sample.y).sum()
     }
 
-    fn partition_data(&mut self, split: &Split<usize, u8>) -> (&mut Self, &mut Self) {
-        // partition the data set over the split
-        let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-        // return two disjoint subsets
-        self.split_at_mut(i)
-    }
-
     fn split_criterion(&self) -> f64 {
         // This is a classification task, so we use the gini criterion.
         // In the future there will be a function provided by the library for this.
@@ -112,10 +105,9 @@ fn main() {
         let forest = DeterministicForestBuilder::new(
             100,
             DeterministicTreeBuilder::new(
-                1000,
-                None,
-                BestRandomSplit::new(1)
-            )
+                1,
+                BestRandomSplit::new(10)
+            ).with_bootstrap(1000)
         ).fit(&mut train as &mut [_]);
 
         println!("Predicting...");

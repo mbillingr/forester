@@ -7,13 +7,12 @@ use std::fmt;
 
 use rand::{thread_rng, Rng};
 
-use forester::array_ops::Partition;
 use forester::data::{SampleDescription, TrainingData};
-use forester::split::Split;
 use forester::categorical::CatCount;
 
 use examples_common::dig_classes::{Digit, ClassCounts};
 
+#[derive(Clone)]
 struct Sample<'a> {
     x: &'a [u8],
     y: Digit,
@@ -64,13 +63,6 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         // count the number of samples in each class. This is possible
         // because there exists an `impl iter::Sum for ClassCounts`.
         self.iter().map(|sample| sample.y).sum()
-    }
-
-    fn partition_data(&mut self, split: &Split<usize, u8>) -> (&mut Self, &mut Self) {
-        // partition the data set over the split
-        let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-        // return two disjoint subsets
-        self.split_at_mut(i)
     }
 
     fn split_criterion(&self) -> f64 {
