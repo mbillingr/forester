@@ -125,30 +125,51 @@ pub struct DeterministicTreeBuilder<SF, Sample>
     where SF: SplitFinder,
           Sample: SampleDescription,
 {
-    _p: PhantomData<Sample>,
-    min_samples_split: usize,
-    max_depth: Option<usize>,
-    split_finder: SF,
+    pub(crate) _p: PhantomData<Sample>,
+    pub(crate) min_samples_split: usize,
+    pub(crate) max_depth: Option<usize>,
+    pub(crate) bootstrap: Option<usize>,
+    pub(crate) split_finder: SF,
 }
 
 impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
     where SF: SplitFinder,
           Sample: SampleDescription
 {
-    pub fn new(min_samples_split: usize, max_depth: Option<usize>, split_finder: SF) -> Self {
+    pub fn new(min_samples_split: usize, split_finder: SF) -> Self {
         DeterministicTreeBuilder {
             min_samples_split,
             split_finder,
-            max_depth,
+            max_depth: None,
+            bootstrap: None,
             _p: PhantomData,
         }
     }
 
+    pub fn with_max_depth(mut self, md: usize) -> Self {
+        self.max_depth = Some(md);
+        self
+    }
+
+    pub fn with_bootstrap(mut self, n: usize) -> Self {
+        self.bootstrap = Some(n);
+        self
+    }
+
     pub fn fit<Training>(&self, data: &mut Training) -> DeterministicTree<Sample>
-        where Training: ?Sized + TrainingData<Sample>
+        where Training: ?Sized + TrainingData<Sample>,
+              [Sample]: TrainingData<Sample>
     {
         let mut nodes = vec![Node::Invalid];
-        self.recursive_fit(&mut nodes, data, 0, 0);
+
+        match self.bootstrap {
+            None => self.recursive_fit(&mut nodes, data, 0, 0),
+            Some(n) => {
+                let mut bdat = data.bootstrap_resample(n);
+                self.recursive_fit(&mut nodes, bdat.as_mut_slice(), 0, 0);
+            }
+        }
+
         DeterministicTree {
             nodes
         }
@@ -229,6 +250,7 @@ mod tests {
             min_samples_split: 2,
             max_depth: None,
             split_finder: BestRandomSplit::new(1),
+            bootstrap: None,
         };
 
         let tree = dtb.fit(data);
@@ -237,6 +259,28 @@ mod tests {
             assert_eq!(tree.predict(sample), sample.y);
         }
 
+    }
+
+    #[test]
+    fn bootstrap() {
+        let data: &mut [_] = &mut [
+            Sample::new(&[0.0], 1.0),
+            Sample::new(&[1.0], 2.0),
+            Sample::new(&[2.0], 1.0),
+            Sample::new(&[3.0], 2.0),
+            Sample::new(&[4.0], 11.0),
+            Sample::new(&[5.0], 12.0),
+            Sample::new(&[6.0], 11.0),
+            Sample::new(&[7.0], 12.0),
+        ];
+
+        let tree = DeterministicTreeBuilder::new(2, BestRandomSplit::new(1))
+            .with_bootstrap(800)  // large number of BS samples to make sure each original sample is picked at least once
+            .fit(data);
+
+        for sample in data {
+            assert_eq!(tree.predict(sample), sample.y);
+        }
     }
 
     #[test]

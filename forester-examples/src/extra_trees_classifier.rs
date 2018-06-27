@@ -8,15 +8,15 @@ use std::fs::File;
 
 use rand::{thread_rng, Rng};
 
-use forester::array_ops::Partition;
 use forester::categorical::CatCount;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
-use forester::split::{BestRandomSplit, Split};
+use forester::split::BestRandomSplit;
 
 use examples_common::rgb_classes::{ClassCounts, Classes};
 
+#[derive(Clone)]
 struct Sample<Y> {
     x: [f64; 2],
     y: Y,
@@ -48,11 +48,6 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
 
     fn train_leaf_predictor(&self) -> ClassCounts {
         self.iter().map(|sample| sample.y).sum()
-    }
-
-    fn partition_data(&mut self, split: &Split<usize, f64>) -> (&mut Self, &mut Self) {
-        let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-        self.split_at_mut(i)
     }
 
     fn split_criterion(&self) -> f64 {
@@ -119,7 +114,6 @@ fn main() {
         100,  // 100 trees
         DeterministicTreeBuilder::new(
             10,  // don't split less than 10 samples
-            None,
             BestRandomSplit::new(1)
         )
     ).fit(&mut data as &mut [_]);

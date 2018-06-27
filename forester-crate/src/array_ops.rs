@@ -4,6 +4,9 @@ use std::iter;
 use std::mem;
 use std::ops;
 
+use rand::prelude::*;
+use rand::distributions::Uniform;
+
 /// Trait that defines a dot product
 pub trait Dot<B: ?Sized> {
     type Output;
@@ -130,6 +133,13 @@ impl<T> Partition<T> for [T]
     }
 }
 
+pub fn resample<T: Clone, R: Rng>(x: &[T], n: usize, rng: &mut R) -> Vec<T> {
+    rng.sample_iter(&Uniform::new(0, x.len()))
+        .take(n)
+        .map(|i| x[i].clone())
+        .collect()
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -193,5 +203,34 @@ mod tests {
         let i = x.partition(|&xi| xi <= 3);
         assert_eq!(i, 4);
         assert_eq!(x, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn bootstrap() {
+        let x: Vec<_> = (1..=3).collect();
+        let y = resample(&x, 1_000_000, &mut thread_rng());
+
+        let (mut a, mut b, mut c) = (0.0, 0.0, 0.0);
+
+        for z in &y {
+            match z {
+                1 => a += 1.0,
+                2 => b += 1.0,
+                3 => c += 1.0,
+                _ => panic!("Value {} was not in original array", z)
+            }
+        }
+
+        let expected = y.len() as f64 / 3.0;
+
+        let chi_square = (a - expected) * (a - expected) / expected
+            + (b - expected) * (b - expected) / expected
+            + (c - expected) * (c - expected) / expected;
+
+        // check critical value for chi-square distribution with 2 degrees
+        // of freedom at the 99% significance level. (Note that this means
+        // the test is expected to fail in 1% of runs)
+        // https://www.itl.nist.gov/div898/handbook/eda/section3/eda3674.htm
+        assert!(chi_square < 9.21);
     }
 }

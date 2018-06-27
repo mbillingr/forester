@@ -1,5 +1,6 @@
 use std::cmp;
 use std::iter::Sum;
+use std::marker::PhantomData;
 
 use num_traits::Bounded;
 
@@ -13,14 +14,13 @@ pub mod extra_trees_regressor {
     use super::*;
     use std::f64;
     use rand::Rng;
-    use array_ops::Partition;
     use data::{SampleDescription, TrainingData};
     use dforest::{DeterministicForest, DeterministicForestBuilder};
     use dtree::DeterministicTreeBuilder;
     use iter_mean::IterMean;
-    use split::{BestRandomSplit, Split};
+    use split::BestRandomSplit;
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Sample<'a, X: 'a, Y> {
         x: &'a[X],
         y: Y,
@@ -65,11 +65,6 @@ pub mod extra_trees_regressor {
             f64::mean(self.iter().map(|sample| &sample.y))
         }
 
-        fn partition_data(&mut self, split: &Split<usize, X>) -> (&mut Self, &mut Self) {
-            let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-            self.split_at_mut(i)
-        }
-
         fn split_criterion(&self) -> f64 {
             let mean = f64::mean(self.iter().map(|sample| &sample.y));
             self.iter().map(|sample| sample.y - mean).map(|ym| ym * ym).sum::<f64>() / self.len() as f64
@@ -91,6 +86,7 @@ pub mod extra_trees_regressor {
         n_splits: usize,
         min_samples_split: usize,
         max_depth: Option<usize>,
+        bootstrap: Option<usize>,
     }
 
     impl ExtraTreesRegressor {
@@ -98,22 +94,27 @@ pub mod extra_trees_regressor {
             Self::default()
         }
 
-        pub fn n_estimators(mut self, n: usize) -> Self {
+        pub fn with_n_estimators(mut self, n: usize) -> Self {
             self.n_estimators = n;
             self
         }
 
-        pub fn n_splits(mut self, n: usize) -> Self {
+        pub fn with_n_splits(mut self, n: usize) -> Self {
             self.n_splits = n;
             self
         }
 
-        pub fn min_samples_split(mut self, n: usize) -> Self {
+        pub fn with_min_samples_split(mut self, n: usize) -> Self {
             self.min_samples_split = n;
             self
         }
 
-        pub fn max_depth(mut self, d: usize) -> Self {
+        pub fn with_max_depth(mut self, d: usize) -> Self {
+            self.max_depth = Some(d);
+            self
+        }
+
+        pub fn with_bootstrap(mut self, d: usize) -> Self {
             self.max_depth = Some(d);
             self
         }
@@ -128,11 +129,13 @@ pub mod extra_trees_regressor {
 
             DeterministicForestBuilder::new(
                 self.n_estimators,
-                DeterministicTreeBuilder::new(
-                    self.min_samples_split,
-                    self.max_depth,
-                    BestRandomSplit::new(self.n_splits)
-                )
+                DeterministicTreeBuilder {
+                    _p: PhantomData,
+                    min_samples_split: self.min_samples_split,
+                    split_finder: BestRandomSplit::new(self.n_splits),
+                    max_depth: self.max_depth,
+                    bootstrap: self.bootstrap,
+                }
             ).fit(&mut data[..])
         }
     }
@@ -144,6 +147,7 @@ pub mod extra_trees_regressor {
                 n_splits: 1,
                 min_samples_split: 2,
                 max_depth: None,
+                bootstrap: None,
             }
         }
     }
@@ -155,12 +159,11 @@ pub mod extra_trees_classifier {
     use std::f64;
     use rand::Rng;
     use categorical::{Categorical, CatCount};
-    use array_ops::Partition;
     use data::{SampleDescription, TrainingData};
     use dforest::{DeterministicForest, DeterministicForestBuilder};
     use dtree::DeterministicTreeBuilder;
     use iter_mean::IterMean;
-    use split::{BestRandomSplit, Split};
+    use split::BestRandomSplit;
 
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct Classes(pub u8);
@@ -262,7 +265,7 @@ pub mod extra_trees_classifier {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Sample<'a, X: 'a, Y>
         where X: Clone + PartialOrd + SampleRange,
     {
@@ -311,11 +314,6 @@ pub mod extra_trees_classifier {
             self.iter().map(|sample| &sample.y).sum()
         }
 
-        fn partition_data(&mut self, split: &Split<usize, X>) -> (&mut Self, &mut Self) {
-            let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
-            self.split_at_mut(i)
-        }
-
         fn split_criterion(&self) -> f64 {
             let counts: ClassCounts = self.iter().map(|sample| &sample.y).sum();
             let mut gini = 0.0;
@@ -339,6 +337,7 @@ pub mod extra_trees_classifier {
         n_splits: usize,
         min_samples_split: usize,
         max_depth: Option<usize>,
+        bootstrap: Option<usize>,
     }
 
     impl ExtraTreesClassifier {
@@ -346,22 +345,27 @@ pub mod extra_trees_classifier {
             Self::default()
         }
 
-        pub fn n_estimators(mut self, n: usize) -> Self {
+        pub fn with_n_estimators(mut self, n: usize) -> Self {
             self.n_estimators = n;
             self
         }
 
-        pub fn n_splits(mut self, n: usize) -> Self {
+        pub fn with_n_splits(mut self, n: usize) -> Self {
             self.n_splits = n;
             self
         }
 
-        pub fn min_samples_split(mut self, n: usize) -> Self {
+        pub fn with_min_samples_split(mut self, n: usize) -> Self {
             self.min_samples_split = n;
             self
         }
 
-        pub fn max_depth(mut self, d: usize) -> Self {
+        pub fn with_max_depth(mut self, d: usize) -> Self {
+            self.max_depth = Some(d);
+            self
+        }
+
+        pub fn with_bootstrap(mut self, d: usize) -> Self {
             self.max_depth = Some(d);
             self
         }
@@ -376,11 +380,13 @@ pub mod extra_trees_classifier {
 
             DeterministicForestBuilder::new(
                 self.n_estimators,
-                DeterministicTreeBuilder::new(
-                    self.min_samples_split,
-                    self.max_depth,
-                    BestRandomSplit::new(self.n_splits)
-                )
+                DeterministicTreeBuilder {
+                    _p: PhantomData,
+                    min_samples_split: self.min_samples_split,
+                    split_finder: BestRandomSplit::new(self.n_splits),
+                    max_depth: self.max_depth,
+                    bootstrap: self.bootstrap,
+                }
             ).fit(&mut data[..])
         }
     }
@@ -392,6 +398,7 @@ pub mod extra_trees_classifier {
                 n_splits: 1,
                 min_samples_split: 2,
                 max_depth: None,
+                bootstrap: None,
             }
         }
     }
@@ -410,10 +417,10 @@ mod tests {
         let y = vec![5.0, 5.0, 5.0,    2.0, 2.0, 2.0];
 
         let model = ExtraTreesRegressor::new()
-            .n_estimators(2)
-            .n_splits(1)
-            .min_samples_split(2)
-            .max_depth(3)
+            .with_n_estimators(2)
+            .with_n_splits(1)
+            .with_min_samples_split(2)
+            .with_max_depth(3)
             .fit(&x, &y);
 
         assert_eq!(model.predict(&Sample::new(&[-1000], ())), 5.0);
@@ -438,10 +445,10 @@ mod tests {
         let y = vec![1, 1, 1, 2, 2, 2];
 
         let model = ExtraTreesClassifier::new()
-            .n_estimators(100)
-            .n_splits(1)
-            .min_samples_split(2)
-            .max_depth(5)
+            .with_n_estimators(100)
+            .with_n_splits(1)
+            .with_min_samples_split(2)
+            .with_max_depth(5)
             .fit(&x, &y);
 
         assert_eq!(model.predict(&Sample::new(&[-1000], ())).probability(Classes(1)), 1.0);

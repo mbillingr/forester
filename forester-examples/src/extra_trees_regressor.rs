@@ -29,9 +29,9 @@ fn main() {
 
     // configure and fit random forest
     let forest = ExtraTreesRegressor::new()
-        .n_estimators(100)
-        .n_splits(1)
-        .min_samples_split(10)
+        .with_n_estimators(100)
+        .with_n_splits(1)
+        .with_min_samples_split(10)
         .fit(&x_train, &y_train);
 
     // generate test data
