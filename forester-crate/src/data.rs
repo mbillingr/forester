@@ -8,17 +8,18 @@ use rand::thread_rng;
 use array_ops::{Partition, resample};
 use criterion::SplitCriterion;
 use split::Split;
+use split_between::SplitBetween;
 
 /// Data sample used with decision trees
 pub trait SampleDescription {
     /// Type used to parametrize split features
-    type ThetaSplit;
+    type ThetaSplit: Clone;
 
     /// Type used to parametrize leaf predictors
-    type ThetaLeaf;
+    type ThetaLeaf: Clone;
 
     /// Type of a split feature
-    type Feature: PartialOrd + SampleRange;
+    type Feature: PartialOrd + SampleRange + SplitBetween;
 
     type Target;
 

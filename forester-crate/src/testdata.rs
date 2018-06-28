@@ -6,6 +6,7 @@ use rand::{thread_rng, Rng};
 use criterion::VarianceCriterion;
 use data::{SampleDescription, TrainingData};
 use iter_mean::IterMean;
+use split_between::SplitBetween;
 
 #[derive(Debug, Clone)]
 pub struct Sample<'a, X: 'a, Y> {
@@ -23,7 +24,7 @@ impl<'a, X: 'a, Y> Sample<'a, X, Y> {
 }
 
 impl<'a, X> SampleDescription for Sample<'a, X, f64>
-    where X: Clone + PartialOrd + SampleRange + Bounded
+    where X: Clone + PartialOrd + SampleRange + Bounded + SplitBetween
 {
     type ThetaSplit = usize;
     type ThetaLeaf = f64;
@@ -45,7 +46,7 @@ impl<'a, X> SampleDescription for Sample<'a, X, f64>
 }
 
 impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
-    where X: Clone + PartialOrd + SampleRange + Bounded
+    where X: Clone + PartialOrd + SampleRange + Bounded + SplitBetween
 {
     type Criterion = VarianceCriterion;
 
@@ -55,6 +56,10 @@ impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
 
     fn gen_split_feature(&self) -> usize {
         thread_rng().gen_range(0, self[0].x.len())
+    }
+
+    fn all_split_features(&self) -> Option<Box<Iterator<Item=usize>>> {
+        Some(Box::new(0..self[0].x.len()))
     }
 
     fn train_leaf_predictor(&self) -> f64 {

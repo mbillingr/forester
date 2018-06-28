@@ -1,14 +1,18 @@
 //! Module for working with splits.
 
+use std::f64;
+
 use rand::{thread_rng, Rng};
 
 use criterion::SplitCriterion;
 use data::{SampleDescription, TrainingData};
+use split_between::SplitBetween;
 
 /// Parametric representation of a split.
 ///
 /// A split consists of a data-set dependent parameter `theta` that corresponds to a feature, and
 /// a threshold to split the feature into two half-spaces.
+#[derive(Debug)]
 pub struct Split<Theta, Threshold> {
     pub theta: Theta,
     pub threshold: Threshold,
@@ -45,7 +49,7 @@ impl BestRandomSplit {
 impl SplitFinder for BestRandomSplit
 {
     fn find_split<Sample, Training>(&self, data: &mut Training)
-        -> Option<Split<Sample::ThetaSplit, Sample::Feature>>
+                                    -> Option<Split<Sample::ThetaSplit, Sample::Feature>>
         where Sample: SampleDescription,
               Training: ?Sized + TrainingData<Sample>
     {
@@ -90,6 +94,68 @@ impl SplitFinder for BestRandomSplit
     }
 }
 
+/// Find best split.
+///
+/// Finds best split among all possible splits in all features. This only works for data sets that
+/// implement `all_split_features` to return not `None`.
+pub struct BestSplit {
+}
+
+impl BestSplit {
+    pub fn new() -> Self {
+        BestSplit {
+        }
+    }
+}
+
+impl SplitFinder for BestSplit
+{
+    fn find_split<Sample, Training>(&self, data: &mut Training)
+                                    -> Option<Split<Sample::ThetaSplit, Sample::Feature>>
+        where Sample: SampleDescription,
+              Training: ?Sized + TrainingData<Sample>
+    {
+        let n = data.n_samples() as f64;
+        //let mut best_criterion = data.split_criterion();
+        let mut best_criterion = f64::INFINITY;
+        let mut best_split = None;
+
+        let features = data.all_split_features().expect("Dataset does not support iteration over features.");
+
+        for theta in features {
+
+            data.sort_data(&theta);
+
+            let mut left_crit = Training::Criterion::from_dataset(data);
+            let mut right_crit = Training::Criterion::new();
+
+            let mut prev_sf: Option<Sample::Feature> = None;
+            data.visit_samples(|sample| {
+                let sf = sample.sample_as_split_feature(&theta);
+
+                let criterion = (left_crit.get_weighted() + right_crit.get_weighted()) / n;
+
+                if criterion <= best_criterion {
+                    if let Some(ref psf) = prev_sf {
+                        best_criterion = criterion;
+                        best_split = Some(Split {
+                            theta: theta.clone(),
+                            threshold: psf.split_between(&sf)
+                        });
+                    }
+                }
+
+                left_crit.remove_sample(sample);
+                right_crit.add_sample(sample);
+
+                prev_sf = Some(sf);
+            });
+        }
+
+        best_split
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -120,6 +186,27 @@ mod tests {
             Sample::new(&[43.0, 7.0], 12.0),
         ];
         let spl = BestRandomSplit::new(100);
+        let split = spl.find_split(data).unwrap();
+        assert_eq!(split.theta, 1);
+        assert!(split.threshold >= 3.0);
+        assert!(split.threshold <= 4.0);
+    }
+
+    #[test]
+    fn best_split() {
+        let data: &mut [_] = &mut [
+            Sample::new(&[41.0, 0.0], 1.0),
+            Sample::new(&[41.0, 1.0], 2.0),
+            Sample::new(&[43.0, 2.0], 1.0),
+            Sample::new(&[43.0, 3.0], 2.0),
+            Sample::new(&[41.0, 4.0], 11.0),
+            Sample::new(&[41.0, 5.0], 12.0),
+            Sample::new(&[43.0, 6.0], 11.0),
+            Sample::new(&[43.0, 7.0], 12.0),
+            Sample::new(&[42.0, 8.0], 11.0),
+            Sample::new(&[42.0, 9.0], 12.0),
+        ];
+        let spl = BestSplit::new();
         let split = spl.find_split(data).unwrap();
         assert_eq!(split.theta, 1);
         assert!(split.threshold >= 3.0);

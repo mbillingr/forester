@@ -20,6 +20,7 @@ pub mod extra_trees_regressor {
     use dtree::DeterministicTreeBuilder;
     use iter_mean::IterMean;
     use split::BestRandomSplit;
+    use split_between::SplitBetween;
 
     #[derive(Debug, Clone)]
     pub struct Sample<'a, X: 'a, Y> {
@@ -34,7 +35,7 @@ pub mod extra_trees_regressor {
     }
 
     impl<'a, X, Y> SampleDescription for Sample<'a, X, Y>
-        where X: Clone + PartialOrd + SampleRange,
+        where X: Clone + PartialOrd + SampleRange + SplitBetween,
               Y: Clone
     {
         type ThetaSplit = usize;
@@ -57,7 +58,7 @@ pub mod extra_trees_regressor {
     }
 
     impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
-        where X: Clone + PartialOrd + SampleRange + Bounded
+        where X: Clone + PartialOrd + SampleRange + Bounded + SplitBetween
     {
         type Criterion = VarianceCriterion;
         fn n_samples(&self) -> usize {
@@ -123,7 +124,7 @@ pub mod extra_trees_regressor {
         }
 
         pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<f64>) -> DeterministicForest<Sample<'b, T, f64>>
-            where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
+            where T: Clone + cmp::PartialOrd + SampleRange + Bounded + SplitBetween,
         {
             let mut data: Vec<Sample<T, f64>> = x.iter()
                 .zip(y.iter())
@@ -168,6 +169,7 @@ pub mod extra_trees_classifier {
     use dtree::DeterministicTreeBuilder;
     use iter_mean::IterMean;
     use split::BestRandomSplit;
+    use split_between::SplitBetween;
 
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct Classes(pub u8);
@@ -286,7 +288,7 @@ pub mod extra_trees_classifier {
     }
 
     impl<'a, X, Y> SampleDescription for Sample<'a, X, Y>
-        where X: Clone + PartialOrd + SampleRange,
+        where X: Clone + PartialOrd + SampleRange + SplitBetween,
               Y: Clone
     {
         type ThetaSplit = usize;
@@ -309,7 +311,7 @@ pub mod extra_trees_classifier {
     }
 
     impl<'a, X> TrainingData<Sample<'a, X, Classes>> for [Sample<'a, X, Classes>]
-        where X: Clone + PartialOrd + SampleRange + Bounded
+        where X: Clone + PartialOrd + SampleRange + Bounded + SplitBetween
     {
         type Criterion = GiniCriterion;
 
@@ -376,7 +378,7 @@ pub mod extra_trees_classifier {
         }
 
         pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<u8>) -> DeterministicForest<Sample<'b, T, Classes>>
-            where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
+            where T: Clone + cmp::PartialOrd + SampleRange + Bounded + SplitBetween,
         {
             let mut data: Vec<Sample<T, Classes>> = x.iter()
                 .zip(y.iter())
