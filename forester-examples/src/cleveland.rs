@@ -62,7 +62,7 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
 
     fn gen_split_feature(&self) -> usize {
         // The data set has four feature columns
-        thread_rng().gen_range(0, 4)
+        thread_rng().gen_range(0, self[0].x.len())
     }
 
     fn train_leaf_predictor(&self) -> f32 {
