@@ -7,7 +7,6 @@ use std::fmt;
 
 use rand::{thread_rng, Rng};
 
-use forester::categorical::CatCount;
 use forester::criterion::GiniCriterion;
 use forester::data::{SampleDescription, TrainingData};
 

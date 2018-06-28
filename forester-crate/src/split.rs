@@ -80,7 +80,7 @@ impl SplitFinder for BestRandomSplit
             }
 
             // stop early if we find a perfect split
-            // TODO: tolerance rather than exact comparison
+            // TODO: tolerance rather than exact comparison?
             if best_criterion == 0.0 {
                 break
             }
