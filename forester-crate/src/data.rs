@@ -68,6 +68,9 @@ pub trait DataSet<Sample>
     /// Partition data set in-place according to a split
     fn partition_data(&mut self, split: &Split<Sample::ThetaSplit, Sample::Feature>) -> (&mut Self, &mut Self);
 
+    /// Sort data set in-place by feature
+    fn sort_data(&mut self, theta: &Sample::ThetaSplit);
+
     /// Draw `n` samples from this data set with replacement
     fn bootstrap_resample(&self, n: usize) -> Vec<Sample>;
 
@@ -81,6 +84,17 @@ impl<Sample> DataSet<Sample> for [Sample]
     fn partition_data(&mut self, split: &Split<Sample::ThetaSplit, Sample::Feature>) -> (&mut Self, &mut Self) {
         let i = self.partition(|sample| sample.sample_as_split_feature(&split.theta) <= split.threshold);
         self.split_at_mut(i)
+    }
+
+    fn sort_data(&mut self, theta: &Sample::ThetaSplit) {
+        self.sort_unstable_by(|a, b| {
+            let fa = a.sample_as_split_feature(theta);
+            let fb = b.sample_as_split_feature(theta);
+            match fa.partial_cmp(&fb) {
+                Some(ordering) => ordering,
+                None => panic!("Could not compare samples (this is likely caused by a NaN feature"),
+            }
+        })
     }
 
     fn bootstrap_resample(&self, n: usize) -> Vec<Sample> {
