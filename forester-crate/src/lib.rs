@@ -11,6 +11,7 @@ pub mod dforest;
 pub mod dtree;
 pub mod iter_mean;
 pub mod split;
+pub mod split_between;
 pub mod vec2d;
 
 mod testdata;
