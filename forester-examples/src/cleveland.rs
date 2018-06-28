@@ -15,7 +15,7 @@ use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
 use forester::iter_mean::IterMean;
-use forester::split::BestRandomSplit;
+use forester::split::BestSplit;
 
 #[derive(Clone)]
 struct Sample<'a> {
@@ -65,6 +65,10 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         thread_rng().gen_range(0, self[0].x.len())
     }
 
+    fn all_split_features(&self) -> Option<Box<Iterator<Item=usize>>> {
+        Some(Box::new(0..self[0].x.len()))
+    }
+
     fn train_leaf_predictor(&self) -> f32 {
         // leaf prediction is the mean of all training samples that fall into the leaf
         f32::mean(self.iter().map(|sample| &sample.y))
@@ -111,9 +115,9 @@ fn main() {
         let forest = DeterministicForestBuilder::new(
             1000,
             DeterministicTreeBuilder::new(
-                30,
-                BestRandomSplit::new(3)
-            )
+                2,
+                BestSplit::new()
+            ).with_bootstrap(100)
         ).fit(&mut train as &mut [_]);
 
         println!("Predicting...");

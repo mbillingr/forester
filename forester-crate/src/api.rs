@@ -136,6 +136,7 @@ pub mod extra_trees_regressor {
                 DeterministicTreeBuilder {
                     _p: PhantomData,
                     min_samples_split: self.min_samples_split,
+                    min_samples_leaf: 1,
                     split_finder: BestRandomSplit::new(self.n_splits),
                     max_depth: self.max_depth,
                     bootstrap: self.bootstrap,
@@ -390,6 +391,7 @@ pub mod extra_trees_classifier {
                 DeterministicTreeBuilder {
                     _p: PhantomData,
                     min_samples_split: self.min_samples_split,
+                    min_samples_leaf: 1,
                     split_finder: BestRandomSplit::new(self.n_splits),
                     max_depth: self.max_depth,
                     bootstrap: self.bootstrap,

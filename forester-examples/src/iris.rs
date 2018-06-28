@@ -134,6 +134,10 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         thread_rng().gen_range(0, 4)
     }
 
+    fn all_split_features(&self) -> Option<Box<Iterator<Item=usize>>> {
+        Some(Box::new(0..4))
+    }
+
     fn train_leaf_predictor(&self) -> ClassCounts {
         // count the number of samples in each class. This is possible
         // because there exists an `impl iter::Sum for ClassCounts`.

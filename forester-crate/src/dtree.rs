@@ -127,6 +127,7 @@ pub struct DeterministicTreeBuilder<SF, Sample>
 {
     pub(crate) _p: PhantomData<Sample>,
     pub(crate) min_samples_split: usize,
+    pub(crate) min_samples_leaf: usize,
     pub(crate) max_depth: Option<usize>,
     pub(crate) bootstrap: Option<usize>,
     pub(crate) split_finder: SF,
@@ -139,6 +140,7 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
     pub fn new(min_samples_split: usize, split_finder: SF) -> Self {
         DeterministicTreeBuilder {
             min_samples_split,
+            min_samples_leaf: 1,
             split_finder,
             max_depth: None,
             bootstrap: None,
@@ -196,16 +198,24 @@ impl<SF, Sample> DeterministicTreeBuilder<SF, Sample>
 
         let split = self.split_finder.find_split(data);
         match split {
-            None => nodes[node] = Node::Leaf(data.train_leaf_predictor()),
+            None => {},
             Some(split) => {
                 let (left, right) = data.partition_data(&split);
 
-                let (l, r) = Self::split_node(nodes, node, split);
+                if left.n_samples() >= self.min_samples_leaf
+                    && right.n_samples() >= self.min_samples_leaf
+                 {
+                    let (l, r) = Self::split_node(nodes, node, split);
 
-                self.recursive_fit(nodes, left, l, depth + 1);
-                self.recursive_fit(nodes, right, r, depth + 1);
+                    self.recursive_fit(nodes, left, l, depth + 1);
+                    self.recursive_fit(nodes, right, r, depth + 1);
+
+                    return
+                }
             }
         }
+
+        nodes[node] = Node::Leaf(data.train_leaf_predictor())
     }
 
     fn split_node(nodes: &mut Vec<Node<Sample>>,

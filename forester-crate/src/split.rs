@@ -116,8 +116,7 @@ impl SplitFinder for BestSplit
               Training: ?Sized + TrainingData<Sample>
     {
         let n = data.n_samples() as f64;
-        //let mut best_criterion = data.split_criterion();
-        let mut best_criterion = f64::INFINITY;
+        let mut best_criterion = Training::Criterion::from_dataset(data).get();
         let mut best_split = None;
 
         let features = data.all_split_features().expect("Dataset does not support iteration over features.");
@@ -135,7 +134,7 @@ impl SplitFinder for BestSplit
 
                 let criterion = (left_crit.get_weighted() + right_crit.get_weighted()) / n;
 
-                if criterion <= best_criterion {
+                if criterion < best_criterion {
                     if let Some(ref psf) = prev_sf {
                         best_criterion = criterion;
                         best_split = Some(Split {
