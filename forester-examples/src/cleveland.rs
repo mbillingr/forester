@@ -10,6 +10,7 @@ use std::fmt;
 use rand::{thread_rng, Rng};
 use openml::MeasureAccumulator;
 
+use forester::criterion::VarianceCriterion;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
@@ -32,7 +33,12 @@ impl<'a> SampleDescription for Sample<'a> {
     type ThetaSplit = usize;
     type ThetaLeaf = f32;
     type Feature = f32;
+    type Target = f32;
     type Prediction = f32;
+
+    fn target(&self) -> Self::Target {
+        self.y
+    }
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         // We use the data columns directly as features
@@ -48,6 +54,8 @@ impl<'a> SampleDescription for Sample<'a> {
 }
 
 impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
+    type Criterion = VarianceCriterion;
+
     fn n_samples(&self) -> usize {
         self.len()
     }
@@ -60,13 +68,6 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
     fn train_leaf_predictor(&self) -> f32 {
         // leaf prediction is the mean of all training samples that fall into the leaf
         f32::mean(self.iter().map(|sample| &sample.y))
-    }
-
-    fn split_criterion(&self) -> f64 {
-        // we use the variance in the target variable as splitting criterion
-        let mean = f32::mean(self.iter().map(|sample| &sample.y));
-        let variance = self.iter().map(|sample| sample.y - mean).map(|ym| ym * ym).sum::<f32>() / self.len() as f32;
-        variance as f64
     }
 
     fn feature_bounds(&self, theta: &usize) -> (f32, f32) {

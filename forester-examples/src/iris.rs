@@ -12,11 +12,12 @@ use num_traits::ToPrimitive;
 use rand::{thread_rng, Rng};
 use openml::MeasureAccumulator;
 
+use forester::categorical::{Categorical, CatCount};
+use forester::criterion::GiniCriterion;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
 use forester::split::BestRandomSplit;
-use forester::categorical::{Categorical, CatCount};
 
 use examples_common::rgb_classes::ClassCounts;
 
@@ -98,7 +99,12 @@ impl<'a> SampleDescription for Sample<'a> {
     type ThetaSplit = usize;
     type ThetaLeaf = ClassCounts;
     type Feature = f32;
+    type Target = Iris;
     type Prediction = ClassCounts;
+
+    fn target(&self) -> Self::Target {
+        self.y
+    }
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         // We use the data columns directly as features
@@ -117,6 +123,8 @@ impl<'a> SampleDescription for Sample<'a> {
 }
 
 impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
+    type Criterion = GiniCriterion; // TODO: specialized Gini implementation for three classes
+
     fn n_samples(&self) -> usize {
         self.len()
     }
@@ -130,17 +138,6 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         // count the number of samples in each class. This is possible
         // because there exists an `impl iter::Sum for ClassCounts`.
         self.iter().map(|sample| sample.y).sum()
-    }
-
-    fn split_criterion(&self) -> f64 {
-        // This is a classification task, so we use the gini criterion.
-        // In the future there will be a function provided by the library for this.
-        let counts: ClassCounts = self.iter().map(|sample| sample.y).sum();
-        let p1 = counts.probability(Iris::Setosa);
-        let p2 = counts.probability(Iris::Versicolor);
-        let p3 = counts.probability(Iris::Virginica);
-        let gini = p1 * (1.0 - p1) + p2 * (1.0 - p2) + p3 * (1.0 - p3);
-        gini
     }
 
     fn feature_bounds(&self, theta: &usize) -> (f32, f32) {

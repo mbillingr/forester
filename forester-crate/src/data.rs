@@ -6,6 +6,7 @@ use rand::distributions::range::SampleRange;
 use rand::thread_rng;
 
 use array_ops::{Partition, resample};
+use criterion::SplitCriterion;
 use split::Split;
 
 /// Data sample used with decision trees
@@ -19,9 +20,14 @@ pub trait SampleDescription {
     /// Type of a split feature
     type Feature: PartialOrd + SampleRange;
 
-    /// Type of predicted values; this can be the same as `Self::Y` (e.g. regression) or something
-    /// different (e.g. class probabilities).
+    type Target;
+
+    /// Type of predicted values; this can be the same as `Self::Y` (e.g. regression) or
+    /// something different (e.g. class probabilities).
     type Prediction;
+
+    /// Get target value of sample
+    fn target(&self) -> Self::Target;
 
     /// Compute the value of a leaf feature for a given sample
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature;
@@ -34,6 +40,8 @@ pub trait SampleDescription {
 pub trait TrainingData<Sample>: DataSet<Sample>
     where Sample: SampleDescription
 {
+    type Criterion: SplitCriterion<Sample::Target>;
+
     /// Return number of samples in the data set
     fn n_samples(&self) -> usize;
 
@@ -42,9 +50,6 @@ pub trait TrainingData<Sample>: DataSet<Sample>
 
     /// Train a new leaf predictor
     fn train_leaf_predictor(&self) -> Sample::ThetaLeaf;
-
-    /// Compute split criterion
-    fn split_criterion(&self) -> f64;
 
     /// Return minimum and maximum value of a feature
     fn feature_bounds(&self, theta: &Sample::ThetaSplit) -> (Sample::Feature, Sample::Feature);
@@ -57,7 +62,11 @@ pub trait DataSet<Sample>
     /// Partition data set in-place according to a split
     fn partition_data(&mut self, split: &Split<Sample::ThetaSplit, Sample::Feature>) -> (&mut Self, &mut Self);
 
+    /// Draw `n` samples from this data set with replacement
     fn bootstrap_resample(&self, n: usize) -> Vec<Sample>;
+
+    /// call `visitor` for each sample in the data set
+    fn visit_samples<F: FnMut(&Sample)>(&self, visitor: F);
 }
 
 impl<Sample> DataSet<Sample> for [Sample]
@@ -70,5 +79,11 @@ impl<Sample> DataSet<Sample> for [Sample]
 
     fn bootstrap_resample(&self, n: usize) -> Vec<Sample> {
         resample(self, n, &mut thread_rng())
+    }
+
+    fn visit_samples<F: FnMut(&Sample)>(&self, mut visitor: F) {
+        for sample in self.iter() {
+            visitor(sample);
+        }
     }
 }

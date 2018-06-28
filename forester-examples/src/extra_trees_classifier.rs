@@ -9,6 +9,7 @@ use std::fs::File;
 use rand::{thread_rng, Rng};
 
 use forester::categorical::CatCount;
+use forester::criterion::GiniCriterion;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
@@ -22,11 +23,16 @@ struct Sample<Y> {
     y: Y,
 }
 
-impl<Y> SampleDescription for Sample<Y> {
+impl<Y: Copy> SampleDescription for Sample<Y> {
     type ThetaSplit = usize;
     type ThetaLeaf = ClassCounts;
     type Feature = f64;
+    type Target = Y;
     type Prediction = ClassCounts;
+
+    fn target(&self) -> Self::Target {
+        self.y
+    }
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         self.x[*theta]
@@ -38,6 +44,8 @@ impl<Y> SampleDescription for Sample<Y> {
 }
 
 impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
+    type Criterion = GiniCriterion; // TODO: specialized Gini implementation for three classes
+
     fn n_samples(&self) -> usize {
         self.len()
     }
@@ -48,15 +56,6 @@ impl TrainingData<Sample<Classes>> for [Sample<Classes>] {
 
     fn train_leaf_predictor(&self) -> ClassCounts {
         self.iter().map(|sample| sample.y).sum()
-    }
-
-    fn split_criterion(&self) -> f64 {
-        let counts: ClassCounts = self.iter().map(|sample| sample.y).sum();
-        let p_red = counts.probability(Classes::Red);
-        let p_green = counts.probability(Classes::Green);
-        let p_blue = counts.probability(Classes::Blue);
-        let gini = p_red * (1.0 - p_red) + p_green * (1.0 - p_green) + p_blue * (1.0 - p_blue);
-        gini
     }
 
     fn feature_bounds(&self, theta: &usize) -> (f64, f64) {

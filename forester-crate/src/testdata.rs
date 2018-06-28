@@ -3,6 +3,7 @@ use num_traits::Bounded;
 use rand::distributions::range::SampleRange;
 use rand::{thread_rng, Rng};
 
+use criterion::VarianceCriterion;
 use data::{SampleDescription, TrainingData};
 use iter_mean::IterMean;
 
@@ -27,7 +28,12 @@ impl<'a, X> SampleDescription for Sample<'a, X, f64>
     type ThetaSplit = usize;
     type ThetaLeaf = f64;
     type Feature = X;
+    type Target = f64;
     type Prediction = f64;
+
+    fn target(&self) -> Self::Target {
+        self.y
+    }
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         self.x[*theta].clone()
@@ -41,6 +47,8 @@ impl<'a, X> SampleDescription for Sample<'a, X, f64>
 impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
     where X: Clone + PartialOrd + SampleRange + Bounded
 {
+    type Criterion = VarianceCriterion;
+
     fn n_samples(&self) -> usize {
         self.len()
     }
@@ -51,11 +59,6 @@ impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
 
     fn train_leaf_predictor(&self) -> f64 {
         f64::mean(self.iter().map(|sample| &sample.y))
-    }
-
-    fn split_criterion(&self) -> f64 {
-        let mean = f64::mean(self.iter().map(|sample| &sample.y));
-        self.iter().map(|sample| sample.y - mean).map(|ym| ym * ym).sum::<f64>() / self.len() as f64
     }
 
     fn feature_bounds(&self, theta: &usize) -> (X, X) {

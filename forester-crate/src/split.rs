@@ -2,6 +2,7 @@
 
 use rand::{thread_rng, Rng};
 
+use criterion::SplitCriterion;
 use data::{SampleDescription, TrainingData};
 
 /// Parametric representation of a split.
@@ -49,7 +50,8 @@ impl SplitFinder for BestRandomSplit
               Training: ?Sized + TrainingData<Sample>
     {
         let n = data.n_samples() as f64;
-        let mut best_criterion = data.split_criterion();
+        //let mut best_criterion = data.split_criterion();
+        let mut best_criterion = Training::Criterion::from_dataset(data).get();
         let mut best_split = None;
 
         let mut rng = thread_rng();
@@ -68,8 +70,8 @@ impl SplitFinder for BestRandomSplit
             let split = Split{theta, threshold};
             let (left, right) = data.partition_data(&split);
 
-            let left_crit = left.split_criterion() * left.n_samples() as f64;
-            let right_crit = right.split_criterion()* right.n_samples() as f64;
+            let left_crit = Training::Criterion::from_dataset(left).get_weighted();
+            let right_crit = Training::Criterion::from_dataset(right).get_weighted();
             let criterion = (left_crit + right_crit) / n;
 
             if criterion <= best_criterion {

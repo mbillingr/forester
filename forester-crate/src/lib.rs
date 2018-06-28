@@ -5,6 +5,7 @@ pub mod api;
 pub mod array_ops;
 pub mod categorical;
 pub mod continuous;
+pub mod criterion;
 pub mod data;
 pub mod dforest;
 pub mod dtree;
