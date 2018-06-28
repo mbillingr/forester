@@ -48,6 +48,12 @@ pub trait TrainingData<Sample>: DataSet<Sample>
     /// Generate a new split feature (typically, this will be randomized)
     fn gen_split_feature(&self) -> Sample::ThetaSplit;
 
+    /// Return an iterator over all features.
+    ///
+    /// Data sets where this is not possible (infinite feature space, anyone?) should return `None`
+    /// instead, which is also the default impl.
+    fn all_split_features(&self) -> Option<Box<Iterator<Item=Sample::ThetaSplit>>> { None }
+
     /// Train a new leaf predictor
     fn train_leaf_predictor(&self) -> Sample::ThetaLeaf;
 
