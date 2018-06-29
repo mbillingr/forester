@@ -146,7 +146,7 @@ impl SplitFinder for BestSplit
 
                 let criterion = (left_crit.get_weighted() + right_crit.get_weighted()) / n;
 
-                if criterion < best_criterion {
+                if criterion <= best_criterion {
                     if let Some(ref psf) = prev_sf {
                         best_criterion = criterion;
                         best_split = Some(Split {
