@@ -258,6 +258,7 @@ mod tests {
         let dtb = DeterministicTreeBuilder {
             _p: PhantomData,
             min_samples_split: 2,
+            min_samples_leaf: 1,
             max_depth: None,
             split_finder: BestRandomSplit::new(1),
             bootstrap: None,

@@ -122,6 +122,9 @@ impl SplitFinder for BestSplit
         let features = data.all_split_features().expect("Dataset does not support iteration over features.");
 
         for theta in features {
+            if best_criterion == 0.0 {
+                break
+            }
 
             data.sort_data(&theta);
 
@@ -131,6 +134,15 @@ impl SplitFinder for BestSplit
             let mut prev_sf: Option<Sample::Feature> = None;
             data.visit_samples(|sample| {
                 let sf = sample.sample_as_split_feature(&theta);
+
+                // don't try to split between two samples of same feature value
+                if let Some(ref psf) = prev_sf {
+                    if psf == &sf {
+                        left_crit.remove_sample(sample);
+                        right_crit.add_sample(sample);
+                        return
+                    }
+                }
 
                 let criterion = (left_crit.get_weighted() + right_crit.get_weighted()) / n;
 
@@ -194,20 +206,20 @@ mod tests {
     #[test]
     fn best_split() {
         let data: &mut [_] = &mut [
-            Sample::new(&[41.0, 0.0], 1.0),
-            Sample::new(&[41.0, 1.0], 2.0),
-            Sample::new(&[43.0, 2.0], 1.0),
-            Sample::new(&[43.0, 3.0], 2.0),
-            Sample::new(&[41.0, 4.0], 11.0),
-            Sample::new(&[41.0, 5.0], 12.0),
-            Sample::new(&[43.0, 6.0], 11.0),
-            Sample::new(&[43.0, 7.0], 12.0),
-            Sample::new(&[42.0, 8.0], 11.0),
-            Sample::new(&[42.0, 9.0], 12.0),
+            Sample::new(&[0.0, 41.0, 0.0], 1.0),
+            Sample::new(&[0.0, 41.0, 1.0], 2.0),
+            Sample::new(&[0.0, 43.0, 2.0], 1.0),
+            Sample::new(&[0.0, 43.0, 3.0], 2.0),
+            Sample::new(&[0.0, 41.0, 4.0], 11.0),
+            Sample::new(&[0.0, 41.0, 5.0], 12.0),
+            Sample::new(&[0.0, 43.0, 6.0], 11.0),
+            Sample::new(&[0.0, 43.0, 7.0], 12.0),
+            Sample::new(&[0.0, 42.0, 8.0], 11.0),
+            Sample::new(&[0.0, 42.0, 9.0], 12.0),
         ];
         let spl = BestSplit::new();
         let split = spl.find_split(data).unwrap();
-        assert_eq!(split.theta, 1);
+        assert_eq!(split.theta, 2);
         assert!(split.threshold >= 3.0);
         assert!(split.threshold <= 4.0);
     }
