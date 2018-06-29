@@ -84,11 +84,7 @@ where T: Continuous
     }
 
     fn get_weighted(&self) -> f64 {
-        if self.n == 0 {
-            0.0
-        } else {
-            self.m2
-        }
+        self.m2
     }
 }
 
@@ -116,7 +112,7 @@ where T: Categorical
 
     fn remove_sample<S: SampleDescription<Target=T>>(&mut self, sample: &S) {
         self.counts.remove(sample.target());
-        self.n += 1;
+        self.n -= 1;
     }
 
     fn get(&self) -> f64 {
