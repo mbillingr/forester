@@ -1,6 +1,6 @@
 # forester
-A rust crate for *implementing* various flavors of random forests and
-decision trees.
+A rust crate for tailoring random forests and decision trees to *your* 
+data set.
 
 The aim of this project is to provide generic functionality for working
 with random forests. It is currently in a very early development stage.
