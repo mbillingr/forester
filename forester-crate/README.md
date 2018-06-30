@@ -4,8 +4,11 @@ data set.
 
 The aim of this project is to provide generic functionality for working
 with random forests. It is currently in a very early development stage.
-There is no real API yet; everything is in flux while I'm experimenting
-which concepts work best.
+Key elements of the API are starting to stabilize, so if you happen to
+have anything to say about it, now would be a good time to open an Issue
+[here][issues] 
+
+Don't forget to check out the [examples in the repository][ex-repo].
 
 ## Overview
 
@@ -60,6 +63,8 @@ Examples can be found in the [repository][repo].
 [1]: https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/decisionForests_MSR_TR_2011_114.pdf
 
 [repo]: https://github.com/mbillingr/forester
+[ex-repo]: https://github.com/mbillingr/forester/tree/master/forester-examples
+[issues]: https://github.com/mbillingr/forester/issues
 
 [SampleDescription]: https://docs.rs/forester/0.0.2/forester/data/trait.SampleDescription.html
 [TrainingData]: https://docs.rs/forester/0.0.2/forester/data/trait.TrainingData.html
