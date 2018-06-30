@@ -14,11 +14,13 @@ pub mod extra_trees_regressor {
     use super::*;
     use std::f64;
     use rand::Rng;
+    use criterion::VarianceCriterion;
     use data::{SampleDescription, TrainingData};
     use dforest::{DeterministicForest, DeterministicForestBuilder};
     use dtree::DeterministicTreeBuilder;
     use iter_mean::IterMean;
     use split::BestRandomSplit;
+    use split_between::SplitBetween;
 
     #[derive(Debug, Clone)]
     pub struct Sample<'a, X: 'a, Y> {
@@ -33,12 +35,18 @@ pub mod extra_trees_regressor {
     }
 
     impl<'a, X, Y> SampleDescription for Sample<'a, X, Y>
-        where X: Clone + PartialOrd + SampleRange
+        where X: Clone + PartialOrd + SampleRange + SplitBetween,
+              Y: Clone
     {
         type ThetaSplit = usize;
         type ThetaLeaf = f64;
         type Feature = X;
+        type Target = Y;
         type Prediction = f64;
+
+        fn target(&self) -> Self::Target {
+            self.y.clone()
+        }
 
         fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
             self.x[*theta].clone()
@@ -50,8 +58,9 @@ pub mod extra_trees_regressor {
     }
 
     impl<'a, X> TrainingData<Sample<'a, X, f64>> for [Sample<'a, X, f64>]
-        where X: Clone + PartialOrd + SampleRange + Bounded
+        where X: Clone + PartialOrd + SampleRange + Bounded + SplitBetween
     {
+        type Criterion = VarianceCriterion;
         fn n_samples(&self) -> usize {
             self.len()
         }
@@ -63,11 +72,6 @@ pub mod extra_trees_regressor {
 
         fn train_leaf_predictor(&self) -> f64 {
             f64::mean(self.iter().map(|sample| &sample.y))
-        }
-
-        fn split_criterion(&self) -> f64 {
-            let mean = f64::mean(self.iter().map(|sample| &sample.y));
-            self.iter().map(|sample| sample.y - mean).map(|ym| ym * ym).sum::<f64>() / self.len() as f64
         }
 
         fn feature_bounds(&self, theta: &usize) -> (X, X) {
@@ -120,7 +124,7 @@ pub mod extra_trees_regressor {
         }
 
         pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<f64>) -> DeterministicForest<Sample<'b, T, f64>>
-            where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
+            where T: Clone + cmp::PartialOrd + SampleRange + Bounded + SplitBetween,
         {
             let mut data: Vec<Sample<T, f64>> = x.iter()
                 .zip(y.iter())
@@ -132,6 +136,7 @@ pub mod extra_trees_regressor {
                 DeterministicTreeBuilder {
                     _p: PhantomData,
                     min_samples_split: self.min_samples_split,
+                    min_samples_leaf: 1,
                     split_finder: BestRandomSplit::new(self.n_splits),
                     max_depth: self.max_depth,
                     bootstrap: self.bootstrap,
@@ -159,11 +164,13 @@ pub mod extra_trees_classifier {
     use std::f64;
     use rand::Rng;
     use categorical::{Categorical, CatCount};
+    use criterion::GiniCriterion;
     use data::{SampleDescription, TrainingData};
     use dforest::{DeterministicForest, DeterministicForestBuilder};
     use dtree::DeterministicTreeBuilder;
     use iter_mean::IterMean;
     use split::BestRandomSplit;
+    use split_between::SplitBetween;
 
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct Classes(pub u8);
@@ -198,7 +205,7 @@ pub mod extra_trees_classifier {
             }
         }
 
-        fn probs<F: FnMut(f64)>(&self, mut f: F) {
+        pub fn probs<F: FnMut(f64)>(&self, mut f: F) {
             let n = self.total as f64;
             for c in self.counts.iter() {
                 f(*c as f64 / n);
@@ -282,12 +289,18 @@ pub mod extra_trees_classifier {
     }
 
     impl<'a, X, Y> SampleDescription for Sample<'a, X, Y>
-        where X: Clone + PartialOrd + SampleRange,
+        where X: Clone + PartialOrd + SampleRange + SplitBetween,
+              Y: Clone
     {
         type ThetaSplit = usize;
         type ThetaLeaf = ClassCounts;
         type Feature = X;
+        type Target = Y;
         type Prediction = ClassCounts;
+
+        fn target(&self) -> Self::Target {
+            self.y.clone()
+        }
 
         fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
             self.x[*theta].clone()
@@ -299,8 +312,10 @@ pub mod extra_trees_classifier {
     }
 
     impl<'a, X> TrainingData<Sample<'a, X, Classes>> for [Sample<'a, X, Classes>]
-        where X: Clone + PartialOrd + SampleRange + Bounded
+        where X: Clone + PartialOrd + SampleRange + Bounded + SplitBetween
     {
+        type Criterion = GiniCriterion;
+
         fn n_samples(&self) -> usize {
             self.len()
         }
@@ -312,13 +327,6 @@ pub mod extra_trees_classifier {
 
         fn train_leaf_predictor(&self) -> ClassCounts {
             self.iter().map(|sample| &sample.y).sum()
-        }
-
-        fn split_criterion(&self) -> f64 {
-            let counts: ClassCounts = self.iter().map(|sample| &sample.y).sum();
-            let mut gini = 0.0;
-            counts.probs(|p| gini += p * (1.0 - p));
-            gini
         }
 
         fn feature_bounds(&self, theta: &usize) -> (X, X) {
@@ -371,7 +379,7 @@ pub mod extra_trees_classifier {
         }
 
         pub fn fit<'a, 'b, T>(&'a self, x: &'b Vec2D<T>, y: &'b Vec<u8>) -> DeterministicForest<Sample<'b, T, Classes>>
-            where T: Clone + cmp::PartialOrd + SampleRange + Bounded,
+            where T: Clone + cmp::PartialOrd + SampleRange + Bounded + SplitBetween,
         {
             let mut data: Vec<Sample<T, Classes>> = x.iter()
                 .zip(y.iter())
@@ -383,6 +391,7 @@ pub mod extra_trees_classifier {
                 DeterministicTreeBuilder {
                     _p: PhantomData,
                     min_samples_split: self.min_samples_split,
+                    min_samples_leaf: 1,
                     split_finder: BestRandomSplit::new(self.n_splits),
                     max_depth: self.max_depth,
                     bootstrap: self.bootstrap,

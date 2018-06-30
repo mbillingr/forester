@@ -10,11 +10,12 @@ use std::fmt;
 use rand::{thread_rng, Rng};
 use openml::MeasureAccumulator;
 
+use forester::criterion::VarianceCriterion;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
 use forester::iter_mean::IterMean;
-use forester::split::BestRandomSplit;
+use forester::split::BestSplit;
 
 #[derive(Clone)]
 struct Sample<'a> {
@@ -32,7 +33,12 @@ impl<'a> SampleDescription for Sample<'a> {
     type ThetaSplit = usize;
     type ThetaLeaf = f32;
     type Feature = f32;
+    type Target = f32;
     type Prediction = f32;
+
+    fn target(&self) -> Self::Target {
+        self.y
+    }
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         // We use the data columns directly as features
@@ -48,25 +54,24 @@ impl<'a> SampleDescription for Sample<'a> {
 }
 
 impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
+    type Criterion = VarianceCriterion;
+
     fn n_samples(&self) -> usize {
         self.len()
     }
 
     fn gen_split_feature(&self) -> usize {
         // The data set has four feature columns
-        thread_rng().gen_range(0, 4)
+        thread_rng().gen_range(0, self[0].x.len())
+    }
+
+    fn all_split_features(&self) -> Option<Box<Iterator<Item=usize>>> {
+        Some(Box::new(0..self[0].x.len()))
     }
 
     fn train_leaf_predictor(&self) -> f32 {
         // leaf prediction is the mean of all training samples that fall into the leaf
         f32::mean(self.iter().map(|sample| &sample.y))
-    }
-
-    fn split_criterion(&self) -> f64 {
-        // we use the variance in the target variable as splitting criterion
-        let mean = f32::mean(self.iter().map(|sample| &sample.y));
-        let variance = self.iter().map(|sample| sample.y - mean).map(|ym| ym * ym).sum::<f32>() / self.len() as f32;
-        variance as f64
     }
 
     fn feature_bounds(&self, theta: &usize) -> (f32, f32) {
@@ -110,9 +115,9 @@ fn main() {
         let forest = DeterministicForestBuilder::new(
             1000,
             DeterministicTreeBuilder::new(
-                30,
-                BestRandomSplit::new(3)
-            )
+                2,
+                BestSplit::new()
+            ).with_bootstrap(100)
         ).fit(&mut train as &mut [_]);
 
         println!("Predicting...");

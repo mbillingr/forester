@@ -8,11 +8,12 @@ extern crate serde_derive;
 use rand::{thread_rng, Rng};
 use openml::MeasureAccumulator;
 
+use forester::categorical::CatCount;
+use forester::criterion::GiniCriterion;
 use forester::data::{SampleDescription, TrainingData};
 use forester::dforest::DeterministicForestBuilder;
 use forester::dtree::DeterministicTreeBuilder;
-use forester::split::BestRandomSplit;
-use forester::categorical::CatCount;
+use forester::split::BestSplitRandomFeature;
 
 use examples_common::dig_classes::ClassCounts;
 
@@ -38,7 +39,12 @@ impl<'a> SampleDescription for Sample<'a> {
     type ThetaSplit = usize;
     type ThetaLeaf = ClassCounts;
     type Feature = u8;
+    type Target = u8;
     type Prediction = ClassCounts;
+
+    fn target(&self) -> Self::Target {
+        self.y
+    }
 
     fn sample_as_split_feature(&self, theta: &Self::ThetaSplit) -> Self::Feature {
         // We use the data columns directly as features
@@ -51,6 +57,8 @@ impl<'a> SampleDescription for Sample<'a> {
 }
 
 impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
+    type Criterion = GiniCriterion;
+
     fn n_samples(&self) -> usize {
         self.len()
     }
@@ -60,23 +68,14 @@ impl<'a> TrainingData<Sample<'a>> for [Sample<'a>] {
         thread_rng().gen_range(0, 784)
     }
 
+    fn all_split_features(&self) -> Option<Box<Iterator<Item=usize>>> {
+        Some(Box::new(0..784))
+    }
+
     fn train_leaf_predictor(&self) -> ClassCounts {
         // count the number of samples in each class. This is possible
         // because there exists an `impl iter::Sum for ClassCounts`.
         self.iter().map(|sample| sample.y).sum()
-    }
-
-    fn split_criterion(&self) -> f64 {
-        // This is a classification task, so we use the gini criterion.
-        // In the future there will be a function provided by the library for this.
-        let counts: ClassCounts = self.iter().map(|sample| sample.y).sum();
-
-        let mut gini = 0.0;
-        for c in 0..10 {
-            let p = counts.probability(c);
-            gini += p * (1.0 - p);
-        }
-        gini
     }
 
     fn feature_bounds(&self, theta: &usize) -> (u8, u8) {
@@ -103,11 +102,11 @@ fn main() {
 
         println!("Fitting...");
         let forest = DeterministicForestBuilder::new(
-            100,
+            10,
             DeterministicTreeBuilder::new(
-                1,
-                BestRandomSplit::new(10)
-            ).with_bootstrap(1000)
+                2,
+                BestSplitRandomFeature::new(10)
+            ).with_bootstrap(10000)
         ).fit(&mut train as &mut [_]);
 
         println!("Predicting...");
